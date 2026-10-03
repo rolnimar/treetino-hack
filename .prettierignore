@@ -1,0 +1,12 @@
+.anchor
+.DS_Store
+target
+node_modules
+dist
+build
+test-ledger
+
+Cargo.lock
+bun.lock
+packages/contracts/src/idl/
+packages/contracts/src/types/

@@ -1,0 +1,12 @@
+**/node_modules
+**/dist
+**/target
+.git
+.idea
+**/.idea
+.anchor
+tmp
+test-ledger
+**/.env
+**/.env.*
+!**/.env.example

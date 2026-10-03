@@ -1,0 +1,33 @@
+{
+  "name": "treetino",
+  "version": "0.1.0",
+  "private": true,
+  "packageManager": "bun@1.4.2",
+  "engines": {
+    "bun": ">=1.4.2"
+  },
+  "workspaces": [
+    "frontend",
+    "backend",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "bun run --filter @treetino/contracts build && bun run --parallel --filter '@treetino/*' dev",
+    "dev:frontend": "bun run --filter @treetino/contracts build && bun run --filter @treetino/frontend dev",
+    "dev:backend": "bun run --filter @treetino/contracts build && bun run --filter @treetino/backend dev",
+    "build": "bun run --filter '@treetino/*' build",
+    "build:frontend": "bun run --filter @treetino/contracts build && bun run --filter @treetino/frontend build",
+    "build:backend": "bun run --filter @treetino/contracts build && bun run --filter @treetino/backend build",
+    "typecheck": "bun run --filter @treetino/contracts build && bun run --filter '@treetino/*' typecheck",
+    "test": "bun run build:backend && bun run --filter @treetino/backend test",
+    "test:program": "rtk proxy cargo test -p treetino --tests",
+    "format": "prettier --write frontend backend packages scripts package.json tsconfig.json",
+    "format:check": "prettier --check frontend backend packages scripts package.json tsconfig.json",
+    "idl": "bun run scripts/generate-idl.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "prettier": "latest",
+    "typescript": "^7.0.2"
+  }
+}
