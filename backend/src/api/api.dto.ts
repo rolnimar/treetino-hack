@@ -55,7 +55,7 @@ export class TreeDto implements TreeInfo {
   phase!: TreePhase;
   @ApiProperty({
     description:
-      'True while funding with a positive remaining amount; reflects the latest indexed finalized event.',
+      'True while funding with a positive remaining amount; reflects the latest indexed confirmed event.',
   })
   canBuy!: boolean;
   @ApiProperty({ format: 'date-time' }) updatedAt!: string;

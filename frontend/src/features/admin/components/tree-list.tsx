@@ -77,7 +77,7 @@ export function TreeList() {
         </>
       )}
       <p className="text-xs text-forest/70">
-        Trees come from the backend’s finalized indexer and refresh every 10
+        Trees come from the backend’s confirmed indexer and refresh every 10
         seconds.
       </p>
     </div>

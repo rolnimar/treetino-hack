@@ -19,7 +19,7 @@ export class TreesController {
   @ApiOperation({
     summary: 'List initialized trees',
     description:
-      'Public endpoint backed by PostgreSQL. Filter phase=funding to find trees accepting shares. State reflects the latest indexed finalized event.',
+      'Public endpoint backed by PostgreSQL. Filter phase=funding to find trees accepting shares. State reflects the latest indexed confirmed event.',
   })
   @ApiQuery({
     name: 'phase',

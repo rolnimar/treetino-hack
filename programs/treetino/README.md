@@ -174,7 +174,7 @@ transactions. Authentication proves the configured key submitted the readings;
 it does not prove physical production. Device provisioning, secure key storage,
 key rotation, actual Victron access, and transaction retries are not implemented.
 
-A backend should index finalized program events and reconcile the accounts.
+The backend indexes confirmed program events and reconciles the accounts.
 `ProductionReported` identifies a report PDA storing the supplied readings, timestamp,
 device key, energy total, whether an invoice was issued, amount due, and amount
 paid. `InvoiceIssued`, `InvoicePaid`,

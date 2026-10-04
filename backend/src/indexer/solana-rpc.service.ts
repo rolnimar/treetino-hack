@@ -10,7 +10,7 @@ export class SolanaRpcService {
 
   constructor(config: IndexerConfig) {
     this.connection = new Connection(config.rpcUrl, {
-      commitment: 'finalized',
+      commitment: 'confirmed',
       disableRetryOnRateLimit: true,
       fetch: Object.assign(
         (...args: Parameters<typeof fetch>) =>
@@ -29,7 +29,7 @@ export class SolanaRpcService {
 
   getTreeAccount(address: string, minContextSlot: number) {
     return this.connection.getAccountInfo(new PublicKey(address), {
-      commitment: 'finalized',
+      commitment: 'confirmed',
       minContextSlot,
     });
   }
@@ -38,7 +38,7 @@ export class SolanaRpcService {
     return this.connection.getSignaturesForAddress(
       this.programId,
       { before, limit: 1000 },
-      'finalized',
+      'confirmed',
     );
   }
 
@@ -48,7 +48,7 @@ export class SolanaRpcService {
 
   getTransaction(signature: string) {
     return this.connection.getTransaction(signature, {
-      commitment: 'finalized',
+      commitment: 'confirmed',
       maxSupportedTransactionVersion: 0,
     });
   }

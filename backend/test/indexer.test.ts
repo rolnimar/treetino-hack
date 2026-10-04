@@ -90,7 +90,7 @@ function signature(id: string, time = startTime, err: unknown = null) {
     err,
     memo: null,
     blockTime: time,
-    confirmationStatus: 'finalized',
+    confirmationStatus: 'confirmed',
   };
 }
 
@@ -166,7 +166,7 @@ async function fixture() {
           commitment: string;
         };
         expect(params[0]).toBe(TREETINO_PROGRAM_ID);
-        expect(commitment).toBe('finalized');
+        expect(commitment).toBe('confirmed');
         const offset = before
           ? history.findIndex((entry) => entry.signature === before) + 1
           : 0;
@@ -174,7 +174,7 @@ async function fixture() {
         result = history.slice(offset, offset + 2);
       } else if (method === 'getTransaction') {
         expect(params[1]).toMatchObject({
-          commitment: 'finalized',
+          commitment: 'confirmed',
           maxSupportedTransactionVersion: 0,
         });
         result = unavailable.has(params[0] as string)
@@ -183,7 +183,7 @@ async function fixture() {
       } else if (method === 'getAccountInfo') {
         expect(params[0]).toBe(treeAddress.toBase58());
         expect(params[1]).toMatchObject({
-          commitment: 'finalized',
+          commitment: 'confirmed',
           minContextSlot: 100,
         });
         result = {

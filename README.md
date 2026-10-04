@@ -12,7 +12,7 @@ scripts/             IDL generation
 
 The frontend provides public tree funding and wallet tools alongside the admin workspace.
 The backend exposes health, protocol information, tree listings, indexed event history, and Swagger documentation.
-It polls finalized Solana transactions and preserves their data, decoded Anchor events,
+It polls confirmed Solana transactions and preserves their data, decoded Anchor events,
 and its cursor in PostgreSQL through Drizzle ORM. Wallet signature login separates
 public access from admin access. The admin frontend builds, signs, and submits
 chain management transactions. Tariff calculation is still to be implemented.
@@ -239,7 +239,7 @@ Fetched transaction data is also saved for later inspection or decoding.
   Use `GET /api/trees?phase=funding` for trees still raising funds.
 
 `TreeChanged` is emitted on initialization, share purchases, and phase changes.
-The worker reads the referenced tree account with finalized commitment and a
+The worker reads the referenced tree account with confirmed commitment and a
 minimum context slot matching the transaction, checks its program owner and PDA,
 and decodes static purchase details with the shared IDL. The event supplies the
 phase and raised amount, preserving their history order during a backfill.
@@ -256,7 +256,7 @@ and shares have 6 decimals and a 1:1 base-unit ratio. `canBuy` is true only duri
 funding with a positive remaining amount. The frontend signs `buy_shares` with
 the buyer's wallet; the contract enforces the current phase and funding cap.
 The endpoint reads PostgreSQL without making RPC requests and remains available
-offline. Its funding figures reflect the last indexed finalized event and can
+offline. Its funding figures reflect the last indexed confirmed event and can
 lag live state until the next poll. Trees initialized before the start time are
 discovered only if they emit a subsequent `TreeChanged` event within the scan.
 
