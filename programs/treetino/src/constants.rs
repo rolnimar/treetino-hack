@@ -1,5 +1,4 @@
 pub const DAY: i64 = 86_400;
-pub const INTERVALS: usize = 96;
 pub const SCALE: u128 = 1_000_000_000_000_000_000;
 pub const PAYMENT_TOKEN_NAME: &str = "mockUSDC";
 pub const PAYMENT_TOKEN_SYMBOL: &str = "mockUSDC";

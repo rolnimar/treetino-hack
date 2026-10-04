@@ -2,7 +2,7 @@ use anchor_lang::prelude::*;
 
 #[error_code]
 pub enum TreeError {
-    #[msg("Invalid configuration, amount, or interval data")]
+    #[msg("Invalid configuration or amount")]
     InvalidInput,
     #[msg("Instruction unavailable in this tree phase")]
     InvalidPhase,

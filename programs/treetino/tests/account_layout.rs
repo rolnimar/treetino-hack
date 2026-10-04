@@ -14,7 +14,7 @@ fn account_reserves_are_allocated_zeroed_and_preserved_through_updates() {
     let mut e = Env::new(USDC);
     let admin_key = pda(&[seeds::ADMINS]);
     let position_key = position(&e.tree, &e.alice.pubkey());
-    assert_eq!(e.svm.get_account(&e.tree).unwrap().data.len(), 430);
+    assert_eq!(e.svm.get_account(&e.tree).unwrap().data.len(), 426);
     assert_eq!(e.svm.get_account(&admin_key).unwrap().data.len(), 460);
     assert_eq!(e.tree().reserved, [0; 128]);
     assert_eq!(e.read::<AdminConfig>(admin_key).reserved, [0; 128]);
@@ -25,7 +25,7 @@ fn account_reserves_are_allocated_zeroed_and_preserved_through_updates() {
     e.set_time(START + DAY);
     e.send(e.report(START, vec![1; INTERVALS]), 5).unwrap();
     let report_key = e.report_key(START);
-    assert_eq!(e.svm.get_account(&report_key).unwrap().data.len(), 625);
+    assert_eq!(e.svm.get_account(&report_key).unwrap().data.len(), 629);
     assert_eq!(e.read::<Report>(report_key).reserved, [0; 128]);
 
     // Future fields stored in the reserve must survive current instruction writes.

@@ -1,0 +1,1 @@
+ALTER TABLE "indexed_trees" DROP COLUMN "max_interval_wh";

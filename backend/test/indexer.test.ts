@@ -42,7 +42,6 @@ const treeAccount = await coder.accounts.encode('Tree', {
   target: new BN('18446744073709551615'),
   raised: new BN(0),
   phase: { Funding: {} },
-  max_interval_wh: 1000,
   next_day_start_ts: new BN(0),
   total_wh: new BN(0),
   billed: new BN(0),

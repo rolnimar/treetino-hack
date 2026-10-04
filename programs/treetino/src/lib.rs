@@ -30,17 +30,8 @@ pub mod treetino {
         supplier: Pubkey,
         client: Pubkey,
         reporter: Pubkey,
-        max_interval_wh: u32,
     ) -> Result<()> {
-        init_tree::init_tree(
-            ctx,
-            tree_id,
-            target,
-            supplier,
-            client,
-            reporter,
-            max_interval_wh,
-        )
+        init_tree::init_tree(ctx, tree_id, target, supplier, client, reporter)
     }
     pub fn buy_shares(ctx: Context<BuyShares>, amount: u64) -> Result<()> {
         buy_shares::buy_shares(ctx, amount)

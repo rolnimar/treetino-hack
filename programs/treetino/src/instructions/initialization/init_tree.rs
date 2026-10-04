@@ -69,9 +69,8 @@ pub fn init_tree(
     supplier: Pubkey,
     client: Pubkey,
     reporter: Pubkey,
-    max_interval_wh: u32,
 ) -> Result<()> {
-    require!(target > 0 && max_interval_wh > 0, TreeError::InvalidInput);
+    require!(target > 0, TreeError::InvalidInput);
     require!(
         [supplier, client, reporter]
             .iter()
@@ -90,7 +89,6 @@ pub fn init_tree(
         target,
         raised: 0,
         phase: Phase::Funding,
-        max_interval_wh,
         next_day_start_ts: 0,
         total_wh: 0,
         billed: 0,

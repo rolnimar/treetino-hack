@@ -23,7 +23,6 @@ pub struct Tree {
     pub target: u64,
     pub raised: u64,
     pub phase: Phase,
-    pub max_interval_wh: u32,
     pub next_day_start_ts: i64,
     pub total_wh: u64,
     pub billed: u64,

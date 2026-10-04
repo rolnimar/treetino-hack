@@ -64,7 +64,6 @@ describe('automatic PostgreSQL migrations', () => {
           target: '100',
           raised: '42',
           phase: 'funding',
-          maxIntervalWh: 1000,
         },
       ],
     );
@@ -178,6 +177,54 @@ describe('automatic PostgreSQL migrations', () => {
     const [{ table_name }] =
       await sql`SELECT to_regclass('public.should_rollback')::text AS table_name`;
     expect(table_name).toBeNull();
+  });
+
+  test('removes stored energy limits on upgrade while preserving tree and admin UUIDs', async () => {
+    const { config, sql } = await fixture();
+    const directory = mkdtempSync(
+      join(tmpdir(), 'treetino-pre-energy-removal-'),
+    );
+    cleanup.push(() => rmSync(directory, { recursive: true, force: true }));
+    mkdirSync(join(directory, 'meta'));
+    const journal = JSON.parse(
+      readFileSync(join(config.migrationsFolder, 'meta/_journal.json'), 'utf8'),
+    );
+    const previousEntries = journal.entries.filter(
+      (entry: { tag: string }) => entry.tag !== '0002_remove_energy_limits',
+    );
+    for (const entry of previousEntries) {
+      writeFileSync(
+        join(directory, entry.tag + '.sql'),
+        readFileSync(join(config.migrationsFolder, entry.tag + '.sql')),
+      );
+    }
+    writeFileSync(
+      join(directory, 'meta/_journal.json'),
+      JSON.stringify({ ...journal, entries: previousEntries }),
+    );
+    const previous = await DatabaseService.create({
+      ...config,
+      migrationsFolder: directory,
+    });
+    await previous.onApplicationShutdown();
+    await sql`INSERT INTO indexer_state (stream, start_time) VALUES ('upgrade-stream', 123)`;
+    const [tree] =
+      await sql`INSERT INTO indexed_trees (stream, address, tree_id, creator, supplier, client, reporter, payment_mint, share_mint, funding_token_account, target, raised, phase, max_interval_wh, block_time, signature) VALUES ('upgrade-stream', 'tree', '1', 'creator', 'supplier', 'client', 'reporter', 'mint', 'shares', 'funding', '100', '50', 'funding', 1000, 123, 'signature') RETURNING id`;
+    const [admin] =
+      await sql`INSERT INTO admins (wallet) VALUES ('admin-wallet') RETURNING id`;
+    const updated = await DatabaseService.create(config);
+    cleanup.push(() => updated.onApplicationShutdown());
+    const columns =
+      await sql`SELECT column_name FROM information_schema.columns WHERE table_schema = 'public' AND table_name = 'indexed_trees'`;
+    expect(columns.map((column) => column.column_name)).not.toContain(
+      'max_interval_wh',
+    );
+    const [storedTree] =
+      await sql`SELECT id, target, raised FROM indexed_trees WHERE address = 'tree'`;
+    expect(storedTree).toEqual({ id: tree.id, target: '100', raised: '50' });
+    expect([
+      ...(await sql`SELECT id FROM admins WHERE wallet = 'admin-wallet'`),
+    ]).toEqual([{ id: admin.id }]);
   });
 
   test('missing migration assets fail startup', async () => {

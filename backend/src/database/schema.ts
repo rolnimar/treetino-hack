@@ -115,7 +115,6 @@ export const indexedTrees = pgTable(
     target: text('target').notNull(),
     raised: text('raised').notNull(),
     phase: text('phase').$type<TreePhase>().notNull(),
-    maxIntervalWh: integer('max_interval_wh').notNull(),
     blockTime: bigint('block_time', { mode: 'number' }).notNull(),
     signature: text('signature').notNull(),
   },

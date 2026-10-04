@@ -15,6 +15,13 @@
       "when": 1791121710795,
       "tag": "0001_admin_auth",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791127277881,
+      "tag": "0002_remove_energy_limits",
+      "breakpoints": true
     }
   ]
 }

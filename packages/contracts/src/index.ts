@@ -39,7 +39,6 @@ export interface TreeInfo {
   remaining: string;
   phase: TreePhase;
   canBuy: boolean;
-  maxIntervalWh: number;
   updatedAt: string;
   signature: string;
 }

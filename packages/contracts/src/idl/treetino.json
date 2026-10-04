@@ -822,10 +822,6 @@
         {
           "name": "reporter",
           "type": "pubkey"
-        },
-        {
-          "name": "max_interval_wh",
-          "type": "u32"
         }
       ]
     },
@@ -1602,7 +1598,7 @@
     {
       "code": 6000,
       "name": "InvalidInput",
-      "msg": "Invalid configuration, amount, or interval data"
+      "msg": "Invalid configuration or amount"
     },
     {
       "code": 6001,
@@ -1846,11 +1842,11 @@
           },
           {
             "name": "wh",
+            "docs": [
+              "Readings supplied by the reporter, without count or energy-value validation."
+            ],
             "type": {
-              "array": [
-                "u32",
-                96
-              ]
+              "vec": "u32"
             }
           },
           {
@@ -1991,10 +1987,6 @@
                 "name": "Phase"
               }
             }
-          },
-          {
-            "name": "max_interval_wh",
-            "type": "u32"
           },
           {
             "name": "next_day_start_ts",

@@ -2,7 +2,7 @@ mod common;
 use common::*;
 
 #[test]
-fn reports_require_device_signature_complete_day_and_valid_intervals() {
+fn reports_require_device_signature_and_complete_day() {
     let mut e = Env::new(20 * USDC);
     e.buy(1, 20 * USDC).unwrap();
     e.activate();
@@ -14,14 +14,6 @@ fn reports_require_device_signature_complete_day_and_valid_intervals() {
     let mut spoof = e.report(START, vec![1000; INTERVALS]);
     spoof.accounts[0].pubkey = e.alice.pubkey();
     assert!(e.send(spoof, 1).is_err());
-    custom(
-        e.send(e.report(START, vec![1000; 95]), 5),
-        TreeError::InvalidInput,
-    );
-    custom(
-        e.send(e.report(START, vec![10_001; INTERVALS]), 5),
-        TreeError::InvalidInput,
-    );
     assert_eq!(e.tree().total_wh, 0);
     // Production reporting is independent of backend billing.
     e.send(e.report(START, vec![1000; INTERVALS]), 5).unwrap();
@@ -49,4 +41,31 @@ fn reports_can_backfill_without_a_price_schedule_or_invoice() {
     assert_eq!(e.tree().total_wh, 96);
     assert_eq!(e.tree().next_day_start_ts, START + 2 * DAY);
     assert_eq!(e.tree().billed, 0);
+}
+
+#[test]
+fn reports_store_supplied_readings_without_count_or_energy_limits() {
+    let mut e = Env::new(USDC);
+    e.buy(1, USDC).unwrap();
+    e.activate();
+    let mut cumulative_wh = 0;
+    for (index, count) in [0, 1, 95, 96, 97, 128].into_iter().enumerate() {
+        let day = START + index as i64 * DAY;
+        e.set_time(day + DAY);
+        let wh = vec![u32::MAX; count];
+        e.send(e.report(day, wh.clone()), 5).unwrap();
+        let report: Report = e.read(e.report_key(day));
+        let total_wh = u64::from(u32::MAX) * count as u64;
+        cumulative_wh += total_wh;
+        assert_eq!(report.wh, wh);
+        assert_eq!(report.total_wh, total_wh);
+        assert_eq!(e.tree().total_wh, cumulative_wh);
+        assert_eq!(
+            e.svm.get_account(&e.report_key(day)).unwrap().data.len(),
+            Report::space(count)
+        );
+        e.invoice(day, USDC).unwrap();
+        e.pay(day, USDC).unwrap();
+        assert_eq!(e.read::<Report>(e.report_key(day)).wh, report.wh);
+    }
 }

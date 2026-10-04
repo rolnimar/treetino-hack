@@ -1,9 +1,9 @@
-use crate::constants::{DAY, INTERVALS};
+use crate::constants::DAY;
 use crate::{constants::seeds, errors::TreeError, instructions::*};
 use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
-#[instruction(day_start_ts: i64)]
+#[instruction(day_start_ts: i64, wh: Vec<u32>)]
 pub struct SubmitReport<'info> {
     #[rustfmt::skip]
     #[account(
@@ -20,7 +20,7 @@ pub struct SubmitReport<'info> {
     #[account(
         init,
         payer = reporter,
-        space = 8 + Report::INIT_SPACE,
+        space = Report::space(wh.len()),
         seeds = [seeds::REPORT, tree.key().as_ref(), &day_start_ts.to_le_bytes()],
         bump
     )]
@@ -37,10 +37,6 @@ pub fn submit_report(ctx: Context<SubmitReport>, day_start_ts: i64, wh: Vec<u32>
         day_start_ts == a.tree.next_day_start_ts && day_start_ts % DAY == 0 && next <= now,
         TreeError::InvalidDay
     );
-    require!(
-        wh.len() == INTERVALS && wh.iter().all(|x| *x <= a.tree.max_interval_wh),
-        TreeError::InvalidInput
-    );
     let total_wh = wh
         .iter()
         .try_fold(0u64, |sum, x| sum.checked_add(*x as u64))
@@ -56,7 +52,7 @@ pub fn submit_report(ctx: Context<SubmitReport>, day_start_ts: i64, wh: Vec<u32>
         day_start_ts,
         submitted_at: now,
         reporter: a.reporter.key(),
-        wh: wh.try_into().map_err(|_| TreeError::InvalidInput)?,
+        wh,
         total_wh,
         invoice_issued: false,
         due: 0,

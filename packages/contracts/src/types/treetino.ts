@@ -828,10 +828,6 @@ export type Treetino = {
         {
           "name": "reporter",
           "type": "pubkey"
-        },
-        {
-          "name": "maxIntervalWh",
-          "type": "u32"
         }
       ]
     },
@@ -1608,7 +1604,7 @@ export type Treetino = {
     {
       "code": 6000,
       "name": "invalidInput",
-      "msg": "Invalid configuration, amount, or interval data"
+      "msg": "Invalid configuration or amount"
     },
     {
       "code": 6001,
@@ -1852,11 +1848,11 @@ export type Treetino = {
           },
           {
             "name": "wh",
+            "docs": [
+              "Readings supplied by the reporter, without count or energy-value validation."
+            ],
             "type": {
-              "array": [
-                "u32",
-                96
-              ]
+              "vec": "u32"
             }
           },
           {
@@ -1997,10 +1993,6 @@ export type Treetino = {
                 "name": "phase"
               }
             }
-          },
-          {
-            "name": "maxIntervalWh",
-            "type": "u32"
           },
           {
             "name": "nextDayStartTs",

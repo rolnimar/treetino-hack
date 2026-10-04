@@ -180,7 +180,7 @@ tree account blocks the cursor and retries on the next poll.
 The public tree response includes `address`, creator-scoped `treeId`, `creator`,
 `supplier`, `client`, `reporter`, `paymentMint`, `shareMint`,
 `fundingTokenAccount`, `target`, `raised`, `remaining`, `phase`, `canBuy`,
-`maxIntervalWh`, `updatedAt`, and the latest indexed transaction `signature`.
+`updatedAt`, and the latest indexed transaction `signature`.
 Amounts and tree IDs are decimal strings to preserve u64 precision. Payment
 and shares have 6 decimals and a 1:1 base-unit ratio. `canBuy` is true only during
 funding with a positive remaining amount. The frontend signs `buy_shares` with

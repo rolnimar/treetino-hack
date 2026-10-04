@@ -17,7 +17,7 @@ vault, and investor reward positions. The program ID is
    authority, and no freeze authority.
    Initialization can succeed only once per program ID on each cluster.
 3. `init_tree`: a listed admin signs as creator and chooses tree ID, target,
-   supplier, client, device public key, and maximum Wh per quarter-hour.
+   supplier, client and device public key.
    Tree identity is scoped to the creator.
    The payment mint must already be initialized and must be the singleton PDA.
 4. `buy_shares(amount)`: transfer mockUSDC into the funding vault and mint
@@ -33,15 +33,16 @@ vault, and investor reward positions. The program ID is
    (or the current instant if it is midnight). This represents installation;
    the contract cannot verify installation or enforce a physical agreement.
 7. `submit_report(day_start_ts, wh)`: the configured device key signs one transaction
-   after the day ends, with 96 unsigned quarter-hour **Wh** readings.
+   after the day ends, with the device’s unsigned **Wh** readings. The program
+   stores the readings as supplied, without energy limits or a reading-count check.
    Reports must arrive in day order; backfilling is allowed, skipping is not.
-   Each reading is bounded by the configured physical limit. A unique report
+   A unique report
    PDA prevents duplicates. `day_start_ts` is an i64 Unix timestamp in seconds
    aligned to UTC midnight. Zero production is valid. Reporting does not depend
    on prices or an invoice.
-8. `issue_invoice(amount)`: the backend submits the final bill for a report
-   in payment-mint base units (micro-USDC for mockUSDC). The creator's key is
-   the backend billing authority in this MVP. Each invoice can be issued once;
+8. `issue_invoice(amount)`: the creator submits the final bill for a report
+   in payment-mint base units (micro-USDC for mockUSDC). The admin frontend
+   builds the transaction and the creator signs it. Each invoice can be issued once;
    zero is valid and is distinguished from an invoice not yet issued.
 9. `pay_invoice(amount)`: the configured client pays all or part of a report's
    bill in mockUSDC. This payment, rather than the report, credits rewards.
@@ -174,7 +175,7 @@ it does not prove physical production. Device provisioning, secure key storage,
 key rotation, actual Victron access, and transaction retries are not implemented.
 
 A backend should index finalized program events and reconcile the accounts.
-`ProductionReported` identifies a report PDA storing all 96 values, timestamp,
+`ProductionReported` identifies a report PDA storing the supplied readings, timestamp,
 device key, energy total, whether an invoice was issued, amount due, and amount
 paid. `InvoiceIssued`, `InvoicePaid`,
 `SharesTransferred`, `RewardsClaimed`, and `TreeChanged` track the other flows.
@@ -182,9 +183,9 @@ Scan historical transactions when reconnecting; subscription logs alone are
 not a durable index.
 
 The tests mock the backend's final invoice amount, with no price oracle or
-cloud dependency. The NestJS backend scaffold lives at `backend/`; actual indexing and tariff integration are not implemented.
-Days are fixed **UTC** 96-interval days: normalize local-market DST days before
-submitting readings. The invoice amount must be nonnegative; client credits
+cloud dependency. The NestJS backend at `backend/` indexes events and tree state;
+tariff integration is not implemented.
+Report dates use **UTC** days. Reading counts and energy values are not validated. The invoice amount must be nonnegative; client credits
 and invoice amendments are outside this MVP. Taxes, network fees, foreign
 exchange, penalties, invoices/PDFs, and legal collection remain backend
 concerns. There is no guaranteed return.
@@ -198,7 +199,7 @@ the same serialized byte count. Account allocation includes the reserve, so
 newly created accounts allocate it automatically. SPL mints, token accounts, and
 Metaplex metadata retain their externally defined layouts.
 
-Account sizes including the discriminator are 430 bytes for `Tree`, 625 for
+Account sizes including the discriminator are 426 bytes for `Tree`, `245 + 4 × reading_count` for
 `Report`, 240 for `Position`, and 460 for `AdminConfig` (capacity for 10 admins).
 Accounts created before this reserve was introduced need a separate
 reallocation/migration before the new layout can deserialize them. Upgrading
@@ -254,6 +255,11 @@ rtk proxy env PATH="$HOME/.cache/solana/v1.54/platform-tools/rust/bin:$PATH" car
 Run `rtk proxy bun run idl` from the repository root to regenerate the shared
 IDL, TypeScript program type, and error codes in `packages/contracts/src/`.
 Both applications import this package as `@treetino/contracts`.
+Removing the energy limit changes `init_tree` arguments and the serialized
+`Tree` and `Report` layouts. Deploy the rebuilt program together with the updated
+IDL and clients. Existing accounts created under the previous layouts require
+a separate migration or a fresh deployment before they can be used.
+
 This repository does not deploy or spend devnet funds automatically.
 
 The matching Anchor CLI was installed locally for this checkout at

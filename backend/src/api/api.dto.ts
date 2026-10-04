@@ -58,7 +58,6 @@ export class TreeDto implements TreeInfo {
       'True while funding with a positive remaining amount; reflects the latest indexed finalized event.',
   })
   canBuy!: boolean;
-  @ApiProperty({ type: 'integer' }) maxIntervalWh!: number;
   @ApiProperty({ format: 'date-time' }) updatedAt!: string;
   @ApiProperty({
     description: 'Latest indexed tree-change transaction signature.',

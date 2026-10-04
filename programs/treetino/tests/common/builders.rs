@@ -80,7 +80,6 @@ impl Env {
                 supplier: self.supplier.pubkey(),
                 client: self.client.pubkey(),
                 reporter: self.device.pubkey(),
-                max_interval_wh: 10_000,
             },
         )
     }

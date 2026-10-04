@@ -16,7 +16,6 @@ interface TreeAccount {
   payment_mint: PublicKey;
   share_mint: PublicKey;
   target: BN;
-  max_interval_wh: number;
 }
 
 const coder = new BorshCoder(TREETINO_IDL);
@@ -65,6 +64,5 @@ export function decodeTree(
     target: tree.target.toString(),
     raised: raised.toString(),
     phase,
-    maxIntervalWh: tree.max_interval_wh,
   };
 }
