@@ -1,3 +1,9 @@
+import { lazy, Suspense } from 'react';
+const Marketplace = lazy(() =>
+  import('./features/marketplace/marketplace').then((module) => ({
+    default: module.Marketplace,
+  })),
+);
 import { AdminAccess } from './AdminAccess';
 import { useQuery } from '@tanstack/react-query';
 import { api } from './lib/api';
@@ -82,6 +88,9 @@ export function App() {
           </p>
         </article>
       </section>
+      <Suspense fallback={<p className="py-12">Loading trees…</p>}>
+        <Marketplace />
+      </Suspense>
       <AdminAccess />
       <footer>
         <p>Treetino · Devnet demo</p>

@@ -10,7 +10,7 @@ packages/contracts/  Shared generated IDL, program types and API response types
 scripts/             IDL generation
 ```
 
-The frontend provides the protocol overview, wallet connection and admin workspace.
+The frontend provides public tree funding and wallet tools alongside the admin workspace.
 The backend exposes health, protocol information, tree listings, indexed event history, and Swagger documentation.
 It polls finalized Solana transactions and preserves their data, decoded Anchor events,
 and its cursor in PostgreSQL through Drizzle ORM. Wallet signature login separates
@@ -78,9 +78,24 @@ or instructions. The program address is unchanged by the project rename.
 Public endpoints and browsing work without login. One Connect wallet button opens
 the Solana wallet-adapter picker. Phantom and Solflare are explicitly available;
 other installed Wallet Standard wallets are discovered automatically. The shared
-provider connects the selected wallet. **Sign in as admin** asks the wallet to
+provider connects the selected wallet. Anyone can use the demo faucet and buy
+shares without an admin login. **Sign in as admin** separately asks the wallet to
 sign a server-issued message. Signing that challenge does not submit a transaction.
 Switching accounts or disconnecting clears the admin session.
+
+The public marketplace loads trees from `GET /api/trees`, with phase filters,
+pagination, funding bars and 10-second refreshes. Active trees remain visible;
+new shares are sold during the funding phase, at 1 mockUSDC per share. Purchases
+cannot exceed your mockUSDC balance or the tree’s remaining funding. The **Max**
+button uses the smaller of those amounts. Wallet balances come from the mockUSDC
+payment ATA; a missing ATA displays zero. The faucet creates it as needed.
+
+Faucet and share-purchase transactions are built on the frontend and signed by
+the connected wallet, without a JWT. The balance refreshes after confirmation;
+funding progress updates when the backend indexer observes the purchase. Amounts
+use exact six-decimal integer conversion. Public actions live under
+`frontend/src/features/marketplace`; `frontend/src/chain/public.ts` validates and
+builds them, and the PDA helpers include buyer share ATAs and position accounts.
 
 The `admins` table contains only a generated UUID `id` and a unique `wallet` address.
 Add the first admin from `backend/` (using the same `DATABASE_URL` as the backend):
