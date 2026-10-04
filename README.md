@@ -19,6 +19,16 @@ chain management transactions. Tariff calculation is still to be implemented.
 The program's lifecycle, token behavior and reward rules are documented in
 [programs/treetino/README.md](programs/treetino/README.md).
 
+## Victron Green Energy DePIN Tokenization Demos
+
+Treetino bridges physical renewable energy hardware with Solana DeFi. The platform connects directly to live industrial telemetry from **Victron Energy VRM Portal API** (`https://vrmapi.victronenergy.com/v2`), proving real energy production and tokenizing fractional ownership:
+
+- [**Victron VRM Data Provenance & DePIN Architecture**](docs/victron-demos/README.md) - Full audit of live API endpoints vs. tokenized economic modeling.
+- [**01. Off-Grid Solar Microgrid (Site 209689)**](docs/victron-demos/01-offgrid-microgrid.md) - Residential solar + lithium storage replacing expensive off-grid diesel generation in Queensland, Australia (8.5% APY).
+- [**02. Commercial ESS Battery Storage (Site 219742)**](docs/victron-demos/02-commercial-ess.md) - Grid-tied battery storage capturing wholesale power arbitrage and frequency response in Amsterdam, Netherlands (14.2% APY).
+- [**03. Solar EV Fast-Charging Hub (Site 374891)**](docs/victron-demos/03-ev-charging-plaza.md) - 10-bay commercial fast-charging plaza with autonomous vehicle micro-billing in Paris, France (18.5% APY).
+- [**04. Treetino V1 Biomimetic Smart Energy Tree**](docs/victron-demos/04-treetino-v1-tree.md) - Flagship dual-modality urban microgrid (22 solar tracking leaves + 12 ducted VAWT wind turbines + trunk battery storage + MKovo PPA, 11.8% APY).
+
 ## Local development
 
 Use Bun 1.4.2 or newer. The lockfile and Docker images pin 1.4.2.
@@ -72,6 +82,74 @@ See the program README for pinned Rust/SBF tooling and the direct SBF build work
 IDL generation uses `target/tooling/bin/anchor` when available, otherwise the
 Anchor CLI on PATH. Regenerate the shared artifacts after changing program accounts
 or instructions. The program address is unchanged by the project rename.
+
+## Developer Onboarding & Architecture Guide
+
+Welcome! If you are picking up this repository, here is everything you need to know about the system architecture, how the frontend and backend interact, and how to extend the platform.
+
+### High-Level Architecture
+
+The platform tokenizes physical renewable energy installations and smart trees on Solana, backed by live SCADA telemetry:
+
+```text
+[ Victron Energy VRM API / Open-Meteo API ]
+                     │
+                     ▼ (Live SCADA Telemetry & Weather)
+[ NestJS Backend (Bun) ] ── (PostgreSQL via Drizzle)
+         │           └────────── (Solana Indexer Polling Worker)
+         ▼
+[ React + Vite Frontend ]
+         ├── Public Marketplace & Investment Vaults
+         ├── Admin Protocol Management & Invoicing
+         └── Victron & Treetino DePIN Asset Dashboards
+                 │
+                 ├── Shared Modular Component Suite (frontend/src/features/victron/components/)
+                 │     ├── TelemetrySidepanel (Uncoupled HTML sidepanel, zero SVG clipping)
+                 │     ├── InstallationHeader (Title, badges, 3-mode flow switcher)
+                 │     ├── FlowSummaryBanner (4-pillar generation, load, revenue, APY KPI)
+                 │     ├── StreamingYieldTicker (Live micro-yield dividend ticker)
+                 │     ├── SchematicCard (Reusable SVG electrical node card)
+                 │     ├── ConduitLine (Dual-channel power & fund particle flows)
+                 │     └── CashFlowDossier (Off-taker profile & 3-tier investor waterfall)
+                 │
+                 └── Archetype Layouts (frontend/src/features/victron/layouts/)
+                       ├── OffgridLayout (Queensland off-grid microgrid, 8.5% APY)
+                       ├── EssLayout (Almere commercial battery arbitrage, 14.2% APY)
+                       ├── EvLayout (Paris 10-bay fast-charging plaza, 18.5% APY)
+                       └── TreetinoLayout (Czech Republic biomimetic tree, 11.8% APY)
+```
+
+### Component Architecture & Guidelines
+
+1. **Decoupled Telemetry Sidepanel (`xl:col-span-3` alongside `xl:col-span-9`)**:
+   - The electrical schematic is rendered inside an SVG canvas (`viewBox="0 0 770 420"`), while `TelemetrySidepanel` is rendered as an HTML column sibling in a 12-column grid.
+   - **Never embed HTML sidepanels inside SVG `<foreignObject>`** — SVG bounds constrain viewport height and clip cards.
+   - Standard hierarchy in `TelemetrySidepanel`:
+     - System Status pulse header.
+     - Specialty slot (archetype-specific metrics, e.g. Tree physics, Diesel replacement, ESS arbitrage spread, EV bay probes).
+     - Live Open-Meteo Weather station card.
+     - Cerbo GX / Venus OS connectivity diagnostics (firmware, D-Bus latency, status).
+     - Node verification footer.
+
+2. **Flow Animation Modes**:
+   - Every layout supports 3 interactive flow modes toggled in `InstallationHeader`:
+     - `energy`: Animates kilowatt electrical flow along conduits.
+     - `funds`: Animates reverse USDC cash flow from off-takers to investor vaults.
+     - `both`: Shows unified dual flows simultaneously.
+
+3. **Styling & Design System**:
+   - Primary palette: `#f5f3eb` (cream background), `#173d2c` (deep forest green), `#6f8d40` (leaf green accent).
+   - Card accents: `forest`, `emerald`, `amber`, `sky`, `rose`.
+   - **Zero emojis**: All status indicators, metrics, and actions use clean SVG vector icons (`victron-icons.tsx`) or badge pills.
+
+### Quick Commands
+
+```sh
+bun run build        # Compiles frontend, backend, and contracts
+bun test             # Runs all 39 unit and integration tests
+bun run lint         # Lints frontend TypeScript
+bun run format:check # Verifies Prettier code style
+```
 
 ## Public and admin access
 

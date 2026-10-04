@@ -7,14 +7,29 @@ import { Button } from '../../components/ui/button';
 import { ErrorMessage } from '../../components/ui/feedback';
 import { PublicTrees } from './components/public-trees';
 import { PublicFaucet } from './components/public-faucet';
+import { VictronDemos } from '../victron/victron-demos';
 
-export function Marketplace() {
+export function Marketplace({
+  onSelectAsset,
+}: {
+  onSelectAsset?: (siteId: number) => void;
+} = {}) {
   const wallet = useConnectedWallet();
   return (
-    <PublicPortfolio key={wallet?.address ?? 'disconnected'} wallet={wallet} />
+    <PublicPortfolio
+      key={wallet?.address ?? 'disconnected'}
+      wallet={wallet}
+      onSelectAsset={onSelectAsset}
+    />
   );
 }
-function PublicPortfolio({ wallet }: { wallet: ConnectedWallet | null }) {
+function PublicPortfolio({
+  wallet,
+  onSelectAsset,
+}: {
+  wallet: ConnectedWallet | null;
+  onSelectAsset?: (siteId: number) => void;
+}) {
   const balance = useMockUsdc(wallet?.address);
   const transaction = usePublicTransactions(wallet);
   const disabled =
@@ -28,11 +43,16 @@ function PublicPortfolio({ wallet }: { wallet: ConnectedWallet | null }) {
       aria-label="Public tree marketplace"
       className="border-t border-forest/20 py-12"
     >
-      <p className="eyebrow">FUND A TREE</p>
-      <h2 className="mb-3 text-2xl font-bold">Explore trees. Own a share.</h2>
-      <p className="mb-6 text-sm text-forest/75">
-        Browse every tree, follow its funding, and buy shares with mockUSDC.
-      </p>
+      <VictronDemos onSelectAsset={onSelectAsset} />
+
+      <div className="mt-12 border-t border-forest/20 pt-10">
+        <p className="eyebrow">ON-CHAIN ASSET POOLS</p>
+        <h2 className="mb-3 text-2xl font-bold">Explore Trees. Own a Share.</h2>
+        <p className="mb-6 text-sm text-forest/75">
+          Tokenized on-chain pools ready for investor capital. Fund active
+          trees, track allocations, and collect revenue distributions.
+        </p>
+      </div>
       {wallet && (
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3 rounded-lg bg-leaf/15 p-4">
           <div>

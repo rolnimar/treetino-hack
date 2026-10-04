@@ -5,12 +5,15 @@ import { HealthController } from './health/health.controller';
 import { IndexerModule } from './indexer/indexer.module';
 import { ProtocolModule } from './protocol/protocol.module';
 
+import { VictronModule } from './victron/victron.module';
+
 @Module({
   imports: [
     ScheduleModule.forRoot(),
     AuthModule,
     ProtocolModule,
     IndexerModule,
+    VictronModule,
   ],
   controllers: [HealthController],
 })

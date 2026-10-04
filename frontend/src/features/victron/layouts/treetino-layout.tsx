@@ -1,0 +1,537 @@
+import { useState } from 'react';
+import type { VictronDemoItem } from '../victron-types';
+import {
+  SunIcon,
+  BatteryIcon,
+  PowerPlugIcon,
+  GridIcon,
+  WindIcon,
+} from '../victron-icons';
+import {
+  InstallationHeader,
+  FlowSummaryBanner,
+  StreamingYieldTicker,
+  TelemetrySidepanel,
+  CashFlowDossier,
+  SchematicCard,
+  ConduitLine,
+} from '../components';
+
+interface TreetinoLayoutProps {
+  demo: VictronDemoItem;
+}
+
+export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
+  const [flowMode, setFlowMode] = useState<'both' | 'power' | 'funds'>('both');
+
+  // Interactive Simulation Controls
+  const initialWind = demo.treeDiagnostics?.windSpeedMs ?? 6.8;
+  const initialIrradiance = demo.treeDiagnostics?.solarIrradianceWm2 ?? 640;
+  const initialMode =
+    demo.treeDiagnostics?.activeAiMode ?? 'Sun Tracking & Venturi Boost';
+
+  const [simWindSpeed, setSimWindSpeed] = useState<number>(initialWind);
+  const [simIrradiance, setSimIrradiance] = useState<number>(initialIrradiance);
+  const [selectedAiMode, setSelectedAiMode] = useState<string>(initialMode);
+  const [isSimulating, setIsSimulating] = useState(false);
+
+  // Physics simulation formulas based on Treetino V1 Technical Specification
+  // 12x Ducted VAWT Turbines: Cut-in 2.0 m/s, rated 35 kW at 12.0 m/s, storm brake > 25.0 m/s
+  let currentWindWatts = 0;
+  if (
+    simWindSpeed >= 2.0 &&
+    simWindSpeed <= 25.0 &&
+    selectedAiMode !== 'Storm Wind Defense (Prapor Folded)'
+  ) {
+    if (simWindSpeed >= 12.0) {
+      currentWindWatts = 35000;
+    } else {
+      const factor = (simWindSpeed - 2.0) / (12.0 - 2.0);
+      currentWindWatts = Math.round(35000 * Math.pow(factor, 2.2));
+    }
+  }
+
+  // 300 Heliotropic Solar Leaves: 10 kW peak, +32% tracking boost
+  const currentSolarWatts =
+    selectedAiMode === 'Storm Wind Defense (Prapor Folded)'
+      ? Math.min(3500, Math.round(10000 * (simIrradiance / 1000) * 0.35))
+      : selectedAiMode === 'Hail Protection (Ground Tilt)'
+        ? Math.min(500, Math.round(10000 * (simIrradiance / 1000) * 0.05))
+        : Math.min(10000, Math.round(10000 * (simIrradiance / 1000) * 1.32));
+
+  const totalGenWatts = currentSolarWatts + currentWindWatts;
+
+  // Off-taker Client Load: MKovo s.r.o. CNC factory load (~14.8 kW)
+  const clientLoadWatts = 14850;
+  const netPower = totalGenWatts - clientLoadWatts;
+
+  const batteryState =
+    netPower > 0 ? 'Charging' : netPower < 0 ? 'Discharging' : 'Idle';
+  const batteryChargeWatts = netPower > 0 ? Math.min(8000, netPower) : 0;
+  const gridWatts =
+    netPower > 0
+      ? -(netPower - batteryChargeWatts) // Exporting to grid (negative)
+      : -netPower - Math.min(8000, -netPower); // Importing from grid (positive)
+
+  // Diagnostics
+  const calculatedNoise = Math.min(
+    34.8,
+    Math.round((20.0 + simWindSpeed * 1.1) * 10) / 10,
+  );
+  const calculatedRpm =
+    simWindSpeed >= 2.0 &&
+    selectedAiMode !== 'Storm Wind Defense (Prapor Folded)'
+      ? Math.round(simWindSpeed * 48)
+      : 0;
+  const trackingElevation =
+    selectedAiMode === 'Storm Wind Defense (Prapor Folded)'
+      ? 0
+      : selectedAiMode === 'Hail Protection (Ground Tilt)'
+        ? -75
+        : 44;
+
+  const resetSimulation = () => {
+    setSimWindSpeed(initialWind);
+    setSimIrradiance(initialIrradiance);
+    setSelectedAiMode(initialMode);
+    setIsSimulating(false);
+  };
+
+  const { dailyTotals, financials } = demo;
+  const clientPpaRate = 0.32; // $0.32 / kWh metered corporate PPA
+  const dailyDisplacedSavings = (
+    dailyTotals.solarYieldKwh * clientPpaRate
+  ).toFixed(2);
+  const annualPoolDistribution = (
+    financials.targetUsdc *
+    (financials.projectedApy / 100)
+  ).toLocaleString();
+
+  const solarTrend = demo.hourlyData.map((d) => d.solarKwh);
+  const loadTrend = demo.hourlyData.map((d) => d.consumptionKwh);
+  const batteryTrend = [82, 83, 83.8, 84.2, 84.5];
+
+  return (
+    <div className="rounded-2xl border border-forest/15 bg-white/95 p-5 shadow-sm sm:p-7 space-y-6">
+      {/* 1. REUSABLE INSTALLATION HEADER */}
+      <InstallationHeader
+        demo={demo}
+        flowMode={flowMode}
+        onFlowModeChange={setFlowMode}
+        badgeOverride="Dual-Modality 45 kW · Biomimetic Tree"
+      />
+
+      {/* 2. INTERACTIVE PHYSICS SIMULATION CONTROLS */}
+      <div className="rounded-xl border border-forest/20 bg-forest/5 p-4 sm:p-5">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-forest/10 pb-3">
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-bold uppercase tracking-wider text-forest">
+              Dual-Modality Aerodynamic & Solar Physics Simulator
+            </span>
+            {isSimulating && (
+              <span className="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-900 border border-amber-500/30">
+                Interactive Simulation Active
+              </span>
+            )}
+          </div>
+          {isSimulating && (
+            <button
+              type="button"
+              onClick={resetSimulation}
+              className="font-mono text-xs font-bold text-forest underline hover:text-forest/80 cursor-pointer"
+            >
+              Reset to Live Prague Weather
+            </button>
+          )}
+        </div>
+
+        <div className="mt-4 grid grid-cols-1 gap-5 md:grid-cols-3">
+          {/* Slider 1: Wind Speed */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="font-bold text-forest flex items-center gap-1.5">
+                <WindIcon className="h-3.5 w-3.5 text-sky-700" />
+                Wind Speed (m/s)
+              </span>
+              <span className="font-black text-sky-800">
+                {simWindSpeed.toFixed(1)} m/s ({(simWindSpeed * 3.6).toFixed(1)}{' '}
+                km/h)
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="28"
+              step="0.2"
+              value={simWindSpeed}
+              onChange={(e) => {
+                setSimWindSpeed(parseFloat(e.target.value));
+                setIsSimulating(true);
+              }}
+              className="w-full accent-sky-700 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-forest/60 font-mono">
+              <span>0 (Calm)</span>
+              <span>2.0 (Cut-in)</span>
+              <span>12 (35 kW Rated)</span>
+              <span>25 (Storm Cut-off)</span>
+            </div>
+          </div>
+
+          {/* Slider 2: Solar Irradiance */}
+          <div className="space-y-1.5">
+            <div className="flex justify-between text-xs font-mono">
+              <span className="font-bold text-forest flex items-center gap-1.5">
+                <SunIcon className="h-3.5 w-3.5 text-amber-600" />
+                Solar Irradiance (W/m²)
+              </span>
+              <span className="font-black text-amber-800">
+                {simIrradiance} W/m²
+              </span>
+            </div>
+            <input
+              type="range"
+              min="0"
+              max="1100"
+              step="10"
+              value={simIrradiance}
+              onChange={(e) => {
+                setSimIrradiance(parseInt(e.target.value, 10));
+                setIsSimulating(true);
+              }}
+              className="w-full accent-amber-600 cursor-pointer"
+            />
+            <div className="flex justify-between text-[10px] text-forest/60 font-mono">
+              <span>0 (Night)</span>
+              <span>300 (Cloudy)</span>
+              <span>750 (Bright Sun)</span>
+              <span>1000+ (Peak Summer)</span>
+            </div>
+          </div>
+
+          {/* Selector: Smart AI Defense Mode */}
+          <div className="space-y-1.5">
+            <label className="block text-xs font-mono font-bold text-forest">
+              Smart AI Operating Mode
+            </label>
+            <select
+              value={selectedAiMode}
+              onChange={(e) => {
+                setSelectedAiMode(e.target.value);
+                setIsSimulating(true);
+              }}
+              className="w-full rounded-lg border border-forest/20 bg-white px-3 py-1.5 font-mono text-xs font-bold text-forest focus:outline-none focus:ring-2 focus:ring-forest/30 cursor-pointer"
+            >
+              <option value="Sun Tracking & Venturi Boost">
+                Sun Tracking & Venturi Boost (Optimal)
+              </option>
+              <option value="Storm Wind Defense (Prapor Folded)">
+                Storm Wind Defense (Prapor Folded &gt;25 m/s)
+              </option>
+              <option value="Hail Protection (Ground Tilt)">
+                Hail Protection (Ground Tilt)
+              </option>
+              <option value="Aerodynamic Synergy (Turbine Flow Optimization)">
+                Aerodynamic Synergy (Flow Optimization)
+              </option>
+            </select>
+            <div className="text-[10px] text-forest/60 font-mono">
+              22 Dunkermotoren actuators dynamically position 300 leaves
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. REUSABLE FLOW SUMMARY BANNER */}
+      <FlowSummaryBanner
+        generation={{
+          label: 'Combined Generation',
+          value: `${(totalGenWatts / 1000).toFixed(2)} kW Total`,
+          subtext: `Solar: ${(currentSolarWatts / 1000).toFixed(2)} kW · Wind: ${(currentWindWatts / 1000).toFixed(2)} kW`,
+        }}
+        consumption={{
+          label: 'MKovo s.r.o. Off-Take',
+          value: `${(clientLoadWatts / 1000).toFixed(2)} kW Active`,
+          subtext: 'Metered precision CNC tooling machinery',
+        }}
+        revenueOrSavings={{
+          label: 'Metered PPA Revenue',
+          value: `+$${dailyDisplacedSavings} / day`,
+          subtext: 'Contracted tariff ($0.32/kWh direct corporate PPA)',
+        }}
+        investorYield={{
+          apyPercent: financials.projectedApy,
+          annualDistribution: annualPoolDistribution,
+          subtext: 'Programmatic USDC distributions streamed on Solana',
+        }}
+      />
+
+      {/* 4. REUSABLE STREAMING YIELD TICKER */}
+      <StreamingYieldTicker
+        assetName="Treetino V1 Tree"
+        stakePercent="0.043%"
+        hourlyRate="+$0.035 / hr"
+        baseYieldUsdc={0.0412}
+        incrementPerSecond={0.0016}
+      />
+
+      {/* 5. SCHEMATIC CANVAS + UNCOUPLED TELEMETRY SIDEPANEL */}
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
+        {/* LEFT 9 COLS: ELECTRICAL CIRCUIT SCHEMATIC CANVAS */}
+        <div className="xl:col-span-9 overflow-x-auto rounded-2xl border border-forest/15 bg-[#fbfaf7] p-3 sm:p-5 flex items-center">
+          <svg
+            viewBox="0 0 770 420"
+            className="w-full h-auto min-w-[680px] select-none"
+          >
+            {/* CONDUIT PIPES */}
+            {/* Pipe 1: Solar Leaves (240, 110) -> Trunk Core (320, 110) */}
+            <ConduitLine
+              x1={240}
+              y1={110}
+              x2={320}
+              y2={110}
+              flow={
+                flowMode !== 'funds' && currentSolarWatts > 0 ? 'amber' : null
+              }
+            />
+
+            {/* Pipe 2: Trunk Core (490, 110) -> MKovo s.r.o. (560, 110) */}
+            <ConduitLine
+              x1={490}
+              y1={110}
+              x2={560}
+              y2={110}
+              flow={
+                flowMode !== 'funds' && clientLoadWatts > 0 ? 'emerald' : null
+              }
+              fundsFlow={
+                flowMode === 'funds' || flowMode === 'both'
+                  ? 'reverse-gold'
+                  : null
+              }
+            />
+
+            {/* Pipe 3: Trunk Core bottom (405, 190) -> Trunk Battery (405, 230) */}
+            <ConduitLine
+              x1={405}
+              y1={190}
+              x2={405}
+              y2={230}
+              flow={
+                flowMode !== 'funds'
+                  ? batteryChargeWatts > 0
+                    ? 'emerald'
+                    : batteryState === 'Discharging'
+                      ? 'reverse-emerald'
+                      : null
+                  : null
+              }
+            />
+
+            {/* Pipe 4: Wind Turbines (240, 310) -> Trunk Battery / DC Bus (320, 310) */}
+            <ConduitLine
+              x1={240}
+              y1={310}
+              x2={320}
+              y2={310}
+              flow={flowMode !== 'funds' && currentWindWatts > 0 ? 'sky' : null}
+            />
+
+            {/* Pipe 5: Trunk Battery / DC Bus (490, 310) -> Grid Intertie (560, 310) */}
+            <ConduitLine
+              x1={490}
+              y1={310}
+              x2={560}
+              y2={310}
+              flow={
+                flowMode !== 'funds'
+                  ? gridWatts < 0
+                    ? 'emerald'
+                    : gridWatts > 0
+                      ? 'reverse-sky'
+                      : null
+                  : null
+              }
+            />
+
+            {/* HARDWARE NODES */}
+            {/* Card 1.1: 300 Heliotropic Solar Leaves */}
+            <SchematicCard
+              x={30}
+              y={30}
+              accent="amber"
+              icon={<SunIcon className="h-4 w-4 text-amber-600" />}
+              title="Solar Leaves (300x)"
+              badge="10 kWp"
+              primaryValue={
+                currentSolarWatts >= 1000
+                  ? `${(currentSolarWatts / 1000).toFixed(2)} kW`
+                  : `${currentSolarWatts} W`
+              }
+              subtext={`Irradiance: ${simIrradiance} W/m²`}
+              sparklineData={solarTrend.slice(-10)}
+              footerLabel="Elevation Angle:"
+              footerValue={`${trackingElevation}° (+32% Boost)`}
+            />
+
+            {/* Card 1.2: Biomimetic Trunk Core Hub */}
+            <foreignObject x={320} y={30} width={170} height={160}>
+              <div className="h-full w-full rounded-2xl border-2 border-forest/20 bg-cream/90 shadow-md flex flex-col justify-between overflow-hidden text-center select-none">
+                <div className="bg-forest py-2 text-white">
+                  <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 font-mono text-xs font-black">
+                    GX
+                  </div>
+                  <div className="mt-1 font-mono text-[10px] font-bold tracking-tight text-white/90">
+                    Cerbo GX + MultiPlus-II
+                  </div>
+                </div>
+                <div className="p-2 flex flex-col items-center justify-center">
+                  <span className="rounded-full bg-forest/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-forest">
+                    Mode: {demo.systemInfo.systemState}
+                  </span>
+                  <div className="mt-1 font-mono text-xs font-extrabold text-emerald-800">
+                    {(totalGenWatts / 1000).toFixed(2)} kW Gen
+                  </div>
+                </div>
+                <div className="bg-white/80 py-1 font-mono text-[9px] text-forest/60 border-t border-forest/10">
+                  Dual-Modality Microgrid Hub
+                </div>
+              </div>
+            </foreignObject>
+
+            {/* Card 1.3: Client Off-Taker (MKovo s.r.o.) */}
+            <SchematicCard
+              x={560}
+              y={30}
+              accent="emerald"
+              icon={<PowerPlugIcon className="h-4 w-4 text-emerald-700" />}
+              title="Client: MKovo s.r.o."
+              badge="Corporate PPA"
+              primaryValue={`${(clientLoadWatts / 1000).toFixed(2)} kW`}
+              subtext="Industrial CNC Machining"
+              sparklineData={loadTrend.slice(-10)}
+              footerLabel="Contracted Tariff:"
+              footerValue="$0.32 / kWh"
+            />
+
+            {/* Card 2.1: 12 Ducted VAWT Turbines */}
+            <SchematicCard
+              x={30}
+              y={230}
+              accent="sky"
+              icon={<WindIcon className="h-4 w-4 text-sky-700" />}
+              title="VAWT Turbines (12x)"
+              badge="35 kWp Ducted"
+              primaryValue={
+                currentWindWatts >= 1000
+                  ? `${(currentWindWatts / 1000).toFixed(2)} kW`
+                  : `${currentWindWatts} W`
+              }
+              subtext={`Speed: ${simWindSpeed.toFixed(1)} m/s · ${calculatedRpm} RPM`}
+              progressPercent={Math.min(100, (currentWindWatts / 35000) * 100)}
+              footerLabel={`Noise: ${calculatedNoise} dB(A)`}
+              footerValue="Venturi Boost (+27%)"
+            />
+
+            {/* Card 2.2: Trunk Battery Storage */}
+            <SchematicCard
+              x={320}
+              y={230}
+              width={170}
+              accent="emerald"
+              icon={<BatteryIcon className="h-4 w-4 text-emerald-700" />}
+              title="Trunk Battery"
+              badge={batteryState}
+              primaryValue={`${demo.currentPower.batterySocPercent.toFixed(1)} %`}
+              subtext="53.48 V · Lynx BMS"
+              sparklineData={batteryTrend}
+              progressPercent={demo.currentPower.batterySocPercent}
+              footerLabel="Reserve Bank:"
+              footerValue="40.0 kWh LFP"
+            />
+
+            {/* Card 2.3: Regional Grid Intertie */}
+            <SchematicCard
+              x={560}
+              y={230}
+              accent="forest"
+              icon={<GridIcon className="h-4 w-4 text-forest/70" />}
+              title="Grid Intertie"
+              badge="Distribution AC"
+              primaryValue={
+                gridWatts < 0
+                  ? `${(-gridWatts / 1000).toFixed(2)} kW Export`
+                  : gridWatts > 0
+                    ? `${(gridWatts / 1000).toFixed(2)} kW Import`
+                    : '0.00 kW Balanced'
+              }
+              subtext={
+                gridWatts < 0
+                  ? 'Exporting excess green power'
+                  : gridWatts > 0
+                    ? 'Importing grid reserve'
+                    : 'Self-sufficient balance'
+              }
+              footerLabel="Interconnection:"
+              footerValue={gridWatts < 0 ? 'Export Active' : 'Connected'}
+            />
+          </svg>
+        </div>
+
+        {/* RIGHT 3 COLS: UNIFIED UNCOUPLED TELEMETRY SIDEPANEL */}
+        <div className="xl:col-span-3">
+          <TelemetrySidepanel
+            demo={demo}
+            specialtyTitle="Tree Biomimetics"
+            specialtyBadge="22 Actuators"
+            specialtyContent={
+              <div className="space-y-2 text-[10px] font-mono text-forest/80">
+                <div className="flex justify-between items-center">
+                  <span>Acoustic Noise (10m):</span>
+                  <strong className="text-emerald-800">
+                    {calculatedNoise} dB(A) (Pass &lt;35)
+                  </strong>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span>Ground Footprint:</span>
+                  <strong className="text-forest">1.2 m² (12m tree)</strong>
+                </div>
+                <div className="border-t border-forest/10 pt-1.5">
+                  <span className="text-forest/60">Autonomous AI Mode:</span>
+                  <div className="font-bold text-emerald-900 mt-0.5 truncate">
+                    {selectedAiMode}
+                  </div>
+                </div>
+                <div className="flex justify-between items-center text-forest/60">
+                  <span>Encoder Feedback:</span>
+                  <span>RE 30-2-500</span>
+                </div>
+              </div>
+            }
+          />
+        </div>
+      </div>
+
+      {/* 6. REUSABLE COMMERCIAL DOSSIER & CASH FLOW WATERFALL */}
+      <CashFlowDossier
+        offTakerTitle="MKovo s.r.o. · Precision Tooling"
+        offTakerBadge="Active Corporate PPA"
+        offTakerDescription="Czech precision metal fabrication facility in Středočeský region. Contracted a 10-year direct power purchase agreement (PPA) with Treetino at a fixed indexed rate of $0.32 / kWh to hedge against volatile industrial wholesale tariffs and decarbonize precision CNC machining lines."
+        keyDetails={[
+          {
+            label: 'Conditional Purchase',
+            value: '€705,000',
+            subtext: '3 Commercial Units',
+          },
+          {
+            label: 'Contract Term',
+            value: '10-Year Take-or-Pay',
+            subtext: 'Sub-metered (EM540)',
+          },
+        ]}
+        grossRevenueTitle="$30,080 / Year Gross Revenue"
+        waterfallSteps={financials.cashFlowWaterfall}
+      />
+    </div>
+  );
+}

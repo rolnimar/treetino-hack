@@ -158,6 +158,7 @@ describe('compiled NestJS application running on Bun', () => {
       '/api/health',
       '/api/protocol',
       '/api/trees',
+      '/api/victron/demos',
     ]);
     const parameters = document.paths['/api/trees'].get.parameters;
     expect(
