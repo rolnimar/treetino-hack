@@ -25,7 +25,7 @@ async function fixture() {
 }
 
 describe('automatic PostgreSQL migrations', () => {
-  test('concurrent fresh startup applies one migration and preserves UUID records on restart', async () => {
+  test('concurrent fresh startup applies migrations once and preserves UUID records on restart', async () => {
     const { config, sql } = await fixture();
     const [first, other] = await Promise.all([
       DatabaseService.create(config),
@@ -85,7 +85,11 @@ describe('automatic PostgreSQL migrations', () => {
     expect(
       (await resumed.listTrees('chain:program', undefined, 10, 0)).trees[0],
     ).toMatchObject({ address: 'tree-address', remaining: '58', canBuy: true });
+    await sql`INSERT INTO admins (wallet) VALUES ('test-wallet')`;
+    await sql`INSERT INTO auth_challenges (wallet, message, expires_at) VALUES ('test-wallet', 'test-message', 123)`;
     for (const table of [
+      'admins',
+      'auth_challenges',
       'indexer_state',
       'indexer_sources',
       'indexed_transactions',
@@ -104,7 +108,14 @@ describe('automatic PostgreSQL migrations', () => {
     }
     const [{ count }] =
       await sql`SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations`;
-    expect(count).toBe(1);
+    expect(count).toBe(
+      JSON.parse(
+        readFileSync(
+          join(config.migrationsFolder, 'meta/_journal.json'),
+          'utf8',
+        ),
+      ).entries.length,
+    );
   });
 
   test('applies later migrations automatically and rolls back a failing migration', async () => {
@@ -132,7 +143,7 @@ describe('automatic PostgreSQL migrations', () => {
     const first = await DatabaseService.create(temporaryConfig);
     await first.onApplicationShutdown();
     journal.entries.push({
-      idx: 1,
+      idx: lastEntry.idx + 1,
       version: '7',
       when: lastEntry.when + 1,
       tag: '0001_test_upgrade',
@@ -146,7 +157,7 @@ describe('automatic PostgreSQL migrations', () => {
     const second = await DatabaseService.create(temporaryConfig);
     await second.onApplicationShutdown();
     journal.entries.push({
-      idx: 2,
+      idx: lastEntry.idx + 2,
       version: '7',
       when: lastEntry.when + 2,
       tag: '0002_test_failure',
@@ -163,7 +174,7 @@ describe('automatic PostgreSQL migrations', () => {
     expect(columns.map((c) => c.column_name)).toContain('test_upgrade');
     const [{ count }] =
       await sql`SELECT count(*)::int AS count FROM drizzle.__drizzle_migrations`;
-    expect(count).toBe(2);
+    expect(count).toBe(journal.entries.length - 1);
     const [{ table_name }] =
       await sql`SELECT to_regclass('public.should_rollback')::text AS table_name`;
     expect(table_name).toBeNull();

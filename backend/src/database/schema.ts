@@ -129,3 +129,19 @@ export type IndexedTreeInput = Omit<
   typeof indexedTrees.$inferInsert,
   'id' | 'stream' | 'blockTime' | 'signature'
 >;
+
+export const admins = pgTable('admins', {
+  id: uuidPrimaryKey(),
+  wallet: text('wallet').notNull().unique(),
+});
+
+export const authChallenges = pgTable(
+  'auth_challenges',
+  {
+    id: uuidPrimaryKey(),
+    wallet: text('wallet').notNull(),
+    message: text('message').notNull(),
+    expiresAt: bigint('expires_at', { mode: 'number' }).notNull(),
+  },
+  (table) => [index('auth_challenges_expiry').on(table.expiresAt)],
+);

@@ -1,3 +1,4 @@
+import { AdminAccess } from './AdminAccess';
 import { useEffect, useState } from 'react';
 import type { ProtocolInfo } from '@treetino/contracts';
 
@@ -82,6 +83,7 @@ export function App() {
           </p>
         </article>
       </section>
+      <AdminAccess />
       <footer>
         <p>Treetino · Devnet demo</p>
         <p role="status">

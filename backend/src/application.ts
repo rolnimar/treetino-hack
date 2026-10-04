@@ -13,6 +13,7 @@ export async function createApplication(options?: NestApplicationOptions) {
       'Public tree listings, protocol information, and finalized Solana event history. Amounts and tree IDs are decimal strings to preserve precision.',
     )
     .setVersion('0.1.0')
+    .addBearerAuth()
     .build();
   SwaggerModule.setup(
     'api/docs',

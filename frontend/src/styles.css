@@ -228,3 +228,29 @@ footer {
     scroll-behavior: smooth;
   }
 }
+
+.admin-access {
+  padding: 3rem 0;
+  border-top: 1px solid #cbd2c0;
+}
+.admin-access p {
+  overflow-wrap: anywhere;
+  max-width: 65ch;
+}
+.wallet-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+button.button {
+  font: inherit;
+  border: 0;
+  cursor: pointer;
+}
+button.button:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+.admin-access [role='alert'] {
+  color: #a52d2d;
+}

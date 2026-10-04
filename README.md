@@ -13,7 +13,8 @@ scripts/             IDL generation
 The frontend currently displays the protocol overview and checks the backend connection.
 The backend exposes health, protocol information, tree listings, indexed event history, and Swagger documentation.
 It polls finalized Solana transactions and preserves their data, decoded Anchor events,
-and its cursor in PostgreSQL through Drizzle ORM. Wallet flows and tariff billing are
+and its cursor in PostgreSQL through Drizzle ORM. Wallet signature login separates
+public access from admin access. Chain transaction flows and tariff billing are
 still to be implemented.
 The program's lifecycle, token behavior and reward rules are documented in
 [programs/treetino/README.md](programs/treetino/README.md).
@@ -71,6 +72,65 @@ See the program README for pinned Rust/SBF tooling and the direct SBF build work
 IDL generation uses `target/tooling/bin/anchor` when available, otherwise the
 Anchor CLI on PATH. Regenerate the shared artifacts after changing program accounts
 or instructions. The program address is unchanged by the project rename.
+
+## Public and admin access
+
+Public endpoints and browsing work without login. The frontend discovers installed
+Wallet Standard Solana wallets (including Phantom and Solflare), connects the selected
+wallet and asks it to sign a server-issued message. Signing the login challenge does
+not submit a transaction.
+
+The `admins` table contains only a generated UUID `id` and a unique `wallet` address.
+Add the first admin from `backend/` (using the same `DATABASE_URL` as the backend):
+
+```sh
+rtk proxy bun run admin -- add <SOLANA_WALLET>
+rtk proxy bun run admin -- list
+rtk proxy bun run admin -- remove <SOLANA_WALLET>
+```
+
+These commands apply pending migrations and manage the whitelist directly. There is
+no public admin registration endpoint. Alternatively, use DBeaver:
+
+```sql
+INSERT INTO admins (wallet) VALUES ('YOUR_SOLANA_WALLET') ON CONFLICT DO NOTHING;
+```
+
+Authentication endpoints are documented in Swagger:
+
+- `POST /api/auth/challenge` with `{ "wallet": "..." }` returns `id`, the exact
+  `message` to sign, and `expiresAt`. Challenges expire after five minutes and are
+  stored in PostgreSQL, so they survive a backend restart.
+- `POST /api/auth/login` with `{ "challengeId": "...", "wallet": "...", "signature": "..." }`
+  verifies the base58 Ed25519 signature, consumes the challenge once and checks the
+  admin whitelist. Success returns `accessToken`, `expiresAt`, and `admin`.
+- `GET /api/admin/me` requires `Authorization: Bearer <accessToken>` and returns the
+  current admin. Missing, invalid or expired tokens return 401; revoked admins return 403. Swagger's **Authorize** button accepts the token.
+
+JWTs expire after one hour. The frontend keeps its JWT in memory and clears the
+session on sign-out, wallet account changes, expiration, or access rejection. A page
+reload requires login again. Removing an admin immediately blocks backend requests;
+the open frontend rechecks access every minute and when the tab receives focus.
+Authentication endpoints are limited to 20 requests per minute per backend peer IP.
+Future protected controllers should import `AuthModule` and use `@UseGuards(AdminGuard)`
+plus `@ApiBearerAuth()`; public controllers need no authentication guard.
+
+Set `AUTH_JWT_SECRET` to a random secret of at least 32 bytes and `AUTH_ORIGIN` to the
+frontend's public origin. Both are required in production. Generate a secret locally:
+
+```sh
+rtk proxy bun -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+```
+
+Put the result in the ignored `backend/.env`. In development, omitting the secret uses
+an ephemeral secret and invalidates JWTs on backend restart; the default origin is
+`http://localhost:5173`. On Railway, set both variables on the backend service and
+use the frontend's HTTPS origin for `AUTH_ORIGIN`.
+
+Database admin access controls backend routes and frontend visibility. Chain admin
+instructions still enforce the program's own admin accounts; a JWT does not grant
+on-chain authority. The initial admin workspace shows the authenticated wallet;
+chain management actions can be added there next.
 
 ## Event history
 
@@ -192,13 +252,13 @@ Create two services, `frontend` and `backend`, from the same GitHub repository.
 Keep both Root Directory settings at `/`: their Docker builds need the root
 workspace and shared contracts package. Configure these settings:
 
-| Setting | Frontend | Backend |
-| --- | --- | --- |
+| Setting                  | Frontend                                      | Backend                                      |
+| ------------------------ | --------------------------------------------- | -------------------------------------------- |
 | Dockerfile path variable | `RAILWAY_DOCKERFILE_PATH=frontend/Dockerfile` | `RAILWAY_DOCKERFILE_PATH=backend/Dockerfile` |
-| Port variable | `PORT=8080` | `PORT=3000` |
-| Healthcheck path | `/health` | `/api/health` |
-| Healthcheck timeout | 60 seconds | 60 seconds |
-| Restart policy | On failure, 3 retries | On failure, 3 retries |
+| Port variable            | `PORT=8080`                                   | `PORT=3000`                                  |
+| Healthcheck path         | `/health`                                     | `/api/health`                                |
+| Healthcheck timeout      | 60 seconds                                    | 60 seconds                                   |
+| Restart policy           | On failure, 3 retries                         | On failure, 3 retries                        |
 
 Set frontend `BACKEND_URL=http://${{backend.RAILWAY_PRIVATE_DOMAIN}}:3000`.
 The backend listens on IPv4 and IPv6 for private networking.

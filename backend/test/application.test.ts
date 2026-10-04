@@ -1,3 +1,6 @@
+import { generateKeyPairSync, sign } from 'node:crypto';
+import bs58 from 'bs58';
+import { SignJWT } from 'jose';
 import { afterAll, beforeAll, describe, expect, test } from 'bun:test';
 import {
   TREETINO_PROGRAM_ID,
@@ -13,6 +16,8 @@ describe('compiled NestJS application running on Bun', () => {
   let database: Awaited<ReturnType<typeof testDatabase>>;
 
   beforeAll(async () => {
+    const previousSecret = process.env.AUTH_JWT_SECRET;
+    process.env.AUTH_JWT_SECRET = 'test-only-secret-32-bytes-or-longer';
     const previousEnabled = process.env.INDEXER_ENABLED;
     database = await testDatabase();
     const previousPath = process.env.DATABASE_URL;
@@ -21,6 +26,8 @@ describe('compiled NestJS application running on Bun', () => {
     try {
       app = await createApplication({ logger: false });
     } finally {
+      if (previousSecret === undefined) delete process.env.AUTH_JWT_SECRET;
+      else process.env.AUTH_JWT_SECRET = previousSecret;
       if (previousEnabled === undefined) delete process.env.INDEXER_ENABLED;
       else process.env.INDEXER_ENABLED = previousEnabled;
       if (previousPath === undefined) delete process.env.DATABASE_URL;
@@ -32,6 +39,95 @@ describe('compiled NestJS application running on Bun', () => {
   afterAll(async () => {
     await app.close();
     await database.cleanup();
+  });
+
+  test('wallet challenge, JWT guard, replay protection and revocation', async () => {
+    const keys = generateKeyPairSync('ed25519');
+    const wallet = bs58.encode(
+      keys.publicKey.export({ format: 'der', type: 'spki' }).subarray(-32),
+    );
+    const post = (path: string, body: unknown) =>
+      fetch(baseUrl + '/api/' + path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+    const me = (token?: string) =>
+      fetch(baseUrl + '/api/admin/me', {
+        headers: token ? { Authorization: 'Bearer ' + token } : {},
+      });
+    expect((await me()).status).toBe(401);
+    expect((await me('garbage')).status).toBe(401);
+    expect((await post('auth/challenge', { wallet: 'invalid' })).status).toBe(
+      400,
+    );
+    expect((await post('auth/login', {})).status).toBe(400);
+    const challenge = async () => {
+      const response = await post('auth/challenge', { wallet });
+      expect(response.status).toBe(201);
+      const data = await response.json();
+      expect(data.message).toContain(wallet);
+      const signature = bs58.encode(
+        sign(null, Buffer.from(data.message), keys.privateKey),
+      );
+      return { challengeId: data.id, wallet, signature };
+    };
+    const unauthorized = await challenge();
+    expect((await post('auth/login', unauthorized)).status).toBe(403);
+    const [admin] =
+      await database.sql`INSERT INTO admins (wallet) VALUES (${wallet}) RETURNING id, wallet`;
+    expect(admin.id).toMatch(/^[0-9a-f-]{36}$/);
+    const input = await challenge();
+    const other = generateKeyPairSync('ed25519');
+    const [row] =
+      await database.sql`SELECT message FROM auth_challenges WHERE id = ${input.challengeId}`;
+    expect(
+      (
+        await post('auth/login', {
+          ...input,
+          signature: bs58.encode(
+            sign(null, Buffer.from(row.message), other.privateKey),
+          ),
+        })
+      ).status,
+    ).toBe(401);
+    expect(
+      (await post('auth/login', { ...input, signature: '!malformed' })).status,
+    ).toBe(401);
+    const results = await Promise.all([
+      post('auth/login', input),
+      post('auth/login', input),
+    ]);
+    expect(results.map((r) => r.status).sort()).toEqual([201, 401]);
+    const session = await results.find((r) => r.status === 201)!.json();
+    expect(session.admin).toEqual({ id: admin.id, wallet });
+    expect((await me(session.accessToken)).status).toBe(200);
+    expect((await me(session.accessToken.slice(0, -4) + 'abcd')).status).toBe(
+      401,
+    );
+    const expiredToken = await new SignJWT({ wallet, role: 'admin' })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject(admin.id)
+      .setIssuer('treetino')
+      .setAudience('treetino-admin')
+      .setIssuedAt()
+      .setExpirationTime(Math.floor(Date.now() / 1000) - 10)
+      .sign(new TextEncoder().encode('test-only-secret-32-bytes-or-longer'));
+    expect((await me(expiredToken)).status).toBe(401);
+    const expiredChallenge = await challenge();
+    await database.sql`UPDATE auth_challenges SET expires_at = 0 WHERE id = ${expiredChallenge.challengeId}`;
+    expect((await post('auth/login', expiredChallenge)).status).toBe(401);
+    await database.sql`DELETE FROM admins WHERE id = ${admin.id}`;
+    expect((await me(session.accessToken)).status).toBe(403);
+    let rateLimited = false;
+    for (let attempt = 0; attempt < 21; attempt++) {
+      if ((await post('auth/challenge', { wallet })).status === 429) {
+        rateLimited = true;
+        break;
+      }
+    }
+    expect(rateLimited).toBe(true);
+    expect((await fetch(baseUrl + '/api/trees')).status).toBe(200);
   });
 
   test('serves the health endpoint', async () => {
@@ -54,6 +150,9 @@ describe('compiled NestJS application running on Bun', () => {
     expect(response.status).toBe(200);
     const document = await response.json();
     expect(Object.keys(document.paths).sort()).toEqual([
+      '/api/admin/me',
+      '/api/auth/challenge',
+      '/api/auth/login',
       '/api/events',
       '/api/events/status',
       '/api/health',
