@@ -10,3 +10,4 @@ Cargo.lock
 bun.lock
 packages/contracts/src/idl/
 packages/contracts/src/types/
+backend/migrations/meta/

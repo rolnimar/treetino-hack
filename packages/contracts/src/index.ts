@@ -19,3 +19,32 @@ export interface ProtocolInfo {
   network: 'devnet';
   programId: string;
 }
+
+export type TreePhase = 'funding' | 'funded' | 'purchased' | 'active';
+
+export interface TreeInfo {
+  id: string;
+  address: string;
+  treeId: string;
+  creator: string;
+  supplier: string;
+  client: string;
+  reporter: string;
+  paymentMint: string;
+  shareMint: string;
+  fundingTokenAccount: string;
+  /** Amounts are decimal strings in base units (6 decimals), with 1:1 shares. */
+  target: string;
+  raised: string;
+  remaining: string;
+  phase: TreePhase;
+  canBuy: boolean;
+  maxIntervalWh: number;
+  updatedAt: string;
+  signature: string;
+}
+
+export interface TreesResponse {
+  trees: TreeInfo[];
+  total: number;
+}

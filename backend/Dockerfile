@@ -12,6 +12,7 @@ COPY --from=build /app/packages/contracts/dist ./packages/contracts/dist
 COPY --from=build /app/backend/node_modules ./backend/node_modules
 COPY --from=build /app/backend/package.json ./backend/package.json
 COPY --from=build /app/backend/dist ./backend/dist
+COPY --from=build /app/backend/migrations ./backend/migrations
 WORKDIR /app/backend
 ENV NODE_ENV=production
 EXPOSE 3000
