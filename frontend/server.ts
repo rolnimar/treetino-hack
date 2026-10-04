@@ -25,6 +25,7 @@ Bun.serve({
           headers,
           body: request.body,
           redirect: 'manual',
+          decompress: false,
         });
       } catch {
         return Response.json({ error: 'Backend unavailable' }, { status: 502 });
