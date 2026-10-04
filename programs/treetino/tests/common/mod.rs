@@ -4,11 +4,12 @@ pub use anchor_lang::{
     prelude::*,
     solana_program::{
         instruction::Instruction, program_option::COption, program_pack::Pack, system_program,
+        sysvar::SysvarId,
     },
     InstructionData, ToAccountMetas,
 };
 pub use anchor_spl::{
-    associated_token,
+    associated_token, metadata,
     token::{self, spl_token},
 };
 pub use litesvm::{types::FailedTransactionMetadata, LiteSVM};
@@ -21,13 +22,20 @@ pub use treetino::{
     accounts as a,
     constants::*,
     instruction as i,
-    instructions::{Phase, Position, Report, Tree},
+    instructions::{AdminConfig, Phase, Position, Report, Tree},
 };
 
 pub const USDC: u64 = 1_000_000;
 pub const START: i64 = DAY * 20_000;
 pub fn pda(seeds: &[&[u8]]) -> Pubkey {
     Pubkey::find_program_address(seeds, &treetino::id()).0
+}
+pub fn program_data() -> Pubkey {
+    Pubkey::find_program_address(
+        &[treetino::ID.as_ref()],
+        &anchor_lang::solana_program::bpf_loader_upgradeable::ID,
+    )
+    .0
 }
 pub fn ix(accounts: impl ToAccountMetas, data: impl InstructionData) -> Instruction {
     Instruction {
@@ -38,6 +46,13 @@ pub fn ix(accounts: impl ToAccountMetas, data: impl InstructionData) -> Instruct
 }
 pub fn ata(owner: &Pubkey, mint: &Pubkey) -> Pubkey {
     associated_token::get_associated_token_address(owner, mint)
+}
+pub fn payment_metadata(mint: &Pubkey) -> Pubkey {
+    Pubkey::find_program_address(
+        &[b"metadata", metadata::ID.as_ref(), mint.as_ref()],
+        &metadata::ID,
+    )
+    .0
 }
 pub fn position(tree: &Pubkey, owner: &Pubkey) -> Pubkey {
     pda(&[b"position", tree.as_ref(), owner.as_ref()])

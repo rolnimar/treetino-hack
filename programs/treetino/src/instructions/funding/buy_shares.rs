@@ -16,7 +16,10 @@ pub struct BuyShares<'info> {
     #[account(
         mut,
         seeds = [seeds::TREE, tree.creator.as_ref(), &tree.seed_id],
-        bump = tree.bump
+        bump = tree.bump,
+        constraint = tree.payment_mint == Pubkey::find_program_address(
+            &[seeds::PAYMENT_MINT], &crate::ID
+        ).0 @ TreeError::InvalidPaymentMint
     )]
     pub tree: Account<'info, Tree>,
     #[account(

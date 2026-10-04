@@ -22,4 +22,10 @@ pub enum TreeError {
     InvoiceAlreadyIssued,
     #[msg("The backend has not issued an invoice for this report")]
     InvoiceNotIssued,
+    #[msg("Only the initialized demo payment mint is supported")]
+    InvalidPaymentMint,
+    #[msg("Signer is not authorized for this operation")]
+    Unauthorized,
+    #[msg("Admin list must contain 1 to 10 distinct nonzero wallets")]
+    InvalidAdmins,
 }

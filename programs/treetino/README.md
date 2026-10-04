@@ -9,37 +9,116 @@ vault, and investor reward positions. The program ID is
 
 ## Lifecycle
 
-1. `init_tree`: creator chooses tree ID, target, payment mint,
+1. `init_admins(admins)`: the current program upgrade authority initializes
+   the global list of 1 to 10 admins. This is required before creating trees.
+2. `init_payment_token`: initialize the single six-decimal classic SPL payment
+   mint at the PDA derived from `[b"payment_mint"]`. This demo token substitutes
+   for USDC. It has immutable name/symbol metadata (`mockUSDC`), program-controlled mint
+   authority, and no freeze authority.
+   Initialization can succeed only once per program ID on each cluster.
+3. `init_tree`: a listed admin signs as creator and chooses tree ID, target,
    supplier, client, device public key, and maximum Wh per quarter-hour.
-   Tree identity is scoped to the creator. A six-decimal classic SPL mint can
-   stand in for USDC on devnet. There is no global approved-mint registry.
-2. `buy_shares(amount)`: transfer mockUSDC into the funding vault and mint
+   Tree identity is scoped to the creator.
+   The payment mint must already be initialized and must be the singleton PDA.
+4. `buy_shares(amount)`: transfer mockUSDC into the funding vault and mint
    shares 1:1 in raw units. For example, 100 USDC buys 100 shares, and
    20,000 USDC fully funds a 20,000-share tree. Buying cannot exceed the target.
    Transfers are disabled until fully funded; mint authority is then revoked.
    Funding stays open until the target is reached. This MVP has no refund or
    cancellation path; contributed capital stays in the funding vault until purchase.
-3. `purchase_tree`: creator releases exactly the target to a token account
+5. `purchase_tree`: creator releases exactly the target to a token account
    owned by the configured supplier. Extra unsolicited vault deposits do not
    issue shares or change the target. They have no withdrawal path in this MVP.
-4. `activate_tree(first_day_start_ts)`: creator starts billing on a future UTC midnight
+6. `activate_tree(first_day_start_ts)`: creator starts billing on a future UTC midnight
    (or the current instant if it is midnight). This represents installation;
    the contract cannot verify installation or enforce a physical agreement.
-5. `submit_report(day_start_ts, wh)`: the configured device key signs one transaction
+7. `submit_report(day_start_ts, wh)`: the configured device key signs one transaction
    after the day ends, with 96 unsigned quarter-hour **Wh** readings.
    Reports must arrive in day order; backfilling is allowed, skipping is not.
    Each reading is bounded by the configured physical limit. A unique report
    PDA prevents duplicates. `day_start_ts` is an i64 Unix timestamp in seconds
    aligned to UTC midnight. Zero production is valid. Reporting does not depend
    on prices or an invoice.
-6. `issue_invoice(amount)`: the backend submits the final bill for a report
+8. `issue_invoice(amount)`: the backend submits the final bill for a report
    in payment-mint base units (micro-USDC for mockUSDC). The creator's key is
    the backend billing authority in this MVP. Each invoice can be issued once;
    zero is valid and is distinguished from an invoice not yet issued.
-7. `pay_invoice(amount)`: the configured client pays all or part of a report's
+9. `pay_invoice(amount)`: the configured client pays all or part of a report's
    bill in mockUSDC. This payment, rather than the report, credits rewards.
-8. `claim_rewards`: a holder withdraws their portion of paid revenue.
-   `transfer_shares(amount)` checkpoints both holders before transferring.
+10. `claim_rewards`: a holder withdraws their portion of paid revenue.
+    `transfer_shares(amount)` checkpoints both holders before transferring.
+
+## Tree initialization access
+
+The global `AdminConfig` account is the PDA derived from `[b"admins"]`.
+It stores 1 to 10 distinct nonzero admin public keys. Each listed admin can
+independently call `init_tree`; there is no voting threshold or multisig.
+An admin signs as `creator`, pays account rent, and owns the resulting tree's
+creator role. Tree addresses remain scoped to that creator and tree ID.
+
+After deploying, the program's **current upgrade authority** signs
+`init_admins(admins)` once. Provide `authority`, this deployed `program`, its
+loader-owned `program_data` account, the `admin_config` PDA, and System program.
+The program verifies both the ProgramData link and its upgrade authority;
+an arbitrary first caller cannot claim the list. Include the upgrade authority
+in `admins` if it should also create trees: list management does not grant
+implicit permission to create a tree.
+
+`set_admins(admins)` replaces the list and requires the current upgrade
+authority's signature, the same program/ProgramData accounts, and `admin_config`.
+Listed admins cannot edit membership unless they are also the upgrade authority.
+Both initialization and updates reject empty lists, more than 10 keys,
+duplicates, and the zero public key. Changing the program's upgrade authority
+also changes who can manage the list. Revoking upgrade authority permanently
+disables list management; listed admins can still create trees.
+
+Removing an admin immediately prevents new tree initialization by that wallet.
+Existing trees retain their original creator and lifecycle permissions.
+This admin list gates only tree initialization. Demo payment-token setup and
+`give_me_money` remain permissionless. Existing deployments can initialize the
+list after upgrading; tree account layouts do not change.
+
+## Demo payment token and faucet
+
+After deploying, call `init_payment_token` with a signing `payer`, the
+`[b"payment_mint"]` PDA as `payment_mint`, its canonical Metaplex metadata PDA
+as `payment_metadata`, and the Metaplex Token Metadata, classic SPL Token,
+System, and Rent accounts. Initialization creates both the mint and metadata
+atomically. The payer covers rent; initialization grants them no mint authority.
+
+| Property | Value |
+| --- | --- |
+| Name | `mockUSDC` |
+| Symbol | `mockUSDC` |
+| Decimals | 6 |
+| Initial supply | 0 |
+| Mint authority | Payment mint PDA, controlled by this program |
+| Freeze authority | None |
+| Metadata update authority | Payment mint PDA |
+| Metadata mutable | No |
+| Metadata URI/image | Empty / none |
+| Seller fee | 0 |
+
+`give_me_money(amount)` is a permissionless demo faucet. Any wallet can sign as
+`owner` to mint the requested amount to its own canonical associated payment
+account, which is created if needed. The caller pays rent and transaction fees.
+Amounts are positive **raw units**: `give_me_money(100_000_000)` gives 100
+mockUSDC. Requests can be repeated with no per-wallet limit, cooldown, or
+protocol supply cap; SPL Token's u64 supply limit still applies. There is no
+issuer or backend approval. Wallets cannot call SPL `mint_to` directly because
+the payment mint PDA is the mint authority.
+
+Use the same mint when initializing every tree. Funding, supplier payments,
+invoices, and reward claims reject other mints, including on trees created by
+an older program version. Existing trees with another payment mint require a
+separate migration; this change does not convert their vaults or balances.
+A payment mint initialized by the previous implementation also requires its
+existing authority to migrate mint authority and create metadata separately;
+`init_payment_token` cannot initialize an existing mint again.
+
+The faucet makes all balances freely obtainable and is for demonstrations.
+Demo tokens have no USDC backing or redemption guarantee. An empty URI means
+there is no hosted JSON metadata or image; the name and symbol are on-chain.
 
 ## Billing and rewards
 
@@ -116,7 +195,7 @@ The layout follows OnRe's instruction-family modules. Each instruction file
 contains its own `#[derive(Accounts)]` struct and handler; `lib.rs` only
 dispatches entrypoints.
 
-- `src/instructions/initialization/`: tree initialization.
+- `src/instructions/initialization/`: admin configuration, singleton payment mint, demo faucet, and tree initialization.
 - `src/instructions/funding/`: buying shares.
 - `src/instructions/tree_operations/`: purchase, activation,
   and tree state.
@@ -125,8 +204,8 @@ dispatches entrypoints.
 - `src/instructions/rewards/`: backend-issued invoices, payments, claims, and reward math.
 - `src/utils/token_utils.rs`: shared SPL CPI helpers.
 - `src/constants.rs` and `src/errors.rs`: shared seeds, units, and errors.
-- `tests/{funding,energy,billing,shares,rewards}.rs`: domain integration tests.
-- `tests/common/`: LiteSVM setup, mock USDC fixtures, and account builders.
+- `tests/{admins,initialization,faucet,funding,energy,billing,shares,rewards}.rs`: domain integration tests.
+- `tests/common/`: LiteSVM setup, faucet-issued demo balances, and account builders.
 
 Daily report accounts are retained. Device wallets need SOL for
 rent-exempt account creation as well as transaction fees; this MVP has no
@@ -142,13 +221,16 @@ Install Anchor CLI 1.2.0 and Solana/Agave SBF tooling, then:
 
 ```sh
 rtk proxy anchor build
+rtk proxy solana program dump --url https://api.devnet.solana.com metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s target/deploy/mpl_token_metadata.so
 rtk proxy cargo test -p treetino --tests
 rtk proxy cargo fmt --all -- --check
 rtk proxy cargo clippy -p treetino --all-targets -- -D warnings
 ```
 
 Always rebuild before running LiteSVM: tests embed
-`target/deploy/treetino.so`. Account metas come from Anchor-generated
+`target/deploy/treetino.so`. Tests also execute the real Metaplex metadata
+program downloaded above as `target/deploy/mpl_token_metadata.so`; this
+read-only download needs no wallet or SOL and only needs to be run once. Account metas come from Anchor-generated
 types, and the fee payer is separate from the instruction signer.
 
 On machines affected by rustup's custom-toolchain parsing, build directly:

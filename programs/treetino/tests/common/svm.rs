@@ -18,11 +18,16 @@ pub struct Env {
 }
 
 impl Env {
-    pub fn new(target: u64) -> Self {
+    pub fn uninitialized() -> Self {
         let mut svm = LiteSVM::new();
         svm.add_program(
             treetino::id(),
             include_bytes!("../../../../target/deploy/treetino.so"),
+        )
+        .unwrap();
+        svm.add_program(
+            metadata::ID,
+            include_bytes!("../../../../target/deploy/mpl_token_metadata.so"),
         )
         .unwrap();
         let fee = Keypair::new();
@@ -41,59 +46,7 @@ impl Env {
         let mut clock: solana_clock::Clock = svm.get_sysvar();
         clock.unix_timestamp = START;
         svm.set_sysvar(&clock);
-        // Seed only mock USDC fixtures. Share mint/ATAs/vaults are created by real CPIs.
-        let mint = Pubkey::new_unique();
-        let mut data = vec![0; spl_token::state::Mint::LEN];
-        spl_token::state::Mint::pack(
-            spl_token::state::Mint {
-                mint_authority: COption::Some(creator.pubkey()),
-                supply: 6_000_000 * USDC,
-                decimals: 6,
-                is_initialized: true,
-                freeze_authority: COption::None,
-            },
-            &mut data,
-        )
-        .unwrap();
-        svm.set_account(
-            mint,
-            SolAccount {
-                lamports: 10_000_000,
-                data,
-                owner: token::ID,
-                executable: false,
-                rent_epoch: 0,
-            },
-        )
-        .unwrap();
-        for key in [&alice, &bob, &carol, &client, &supplier, &creator] {
-            let mut data = vec![0; spl_token::state::Account::LEN];
-            spl_token::state::Account::pack(
-                spl_token::state::Account {
-                    mint,
-                    owner: key.pubkey(),
-                    amount: 1_000_000 * USDC,
-                    delegate: COption::None,
-                    state: spl_token::state::AccountState::Initialized,
-                    is_native: COption::None,
-                    delegated_amount: 0,
-                    close_authority: COption::None,
-                },
-                &mut data,
-            )
-            .unwrap();
-            svm.set_account(
-                ata(&key.pubkey(), &mint),
-                SolAccount {
-                    lamports: 10_000_000,
-                    data,
-                    owner: token::ID,
-                    executable: false,
-                    rent_epoch: 0,
-                },
-            )
-            .unwrap();
-        }
+        let mint = pda(&[seeds::PAYMENT_MINT]);
         let tree = pda(&[b"tree", creator.pubkey().as_ref(), &1u64.to_le_bytes()]);
         let share_mint = pda(&[b"shares", tree.as_ref()]);
         let funding_token_account = pda(&[b"funding", tree.as_ref()]);
@@ -114,27 +67,40 @@ impl Env {
             funding_token_account,
             revenue_token_account,
         };
-        let init = ix(
-            a::InitTree {
-                creator: e.creator.pubkey(),
-                tree,
-                payment_mint: mint,
-                share_mint,
-                funding_token_account,
-                revenue_token_account,
-                token_program: token::ID,
-                system_program: system_program::ID,
+        e.set_upgrade_authority(Some(e.creator.pubkey()));
+        e
+    }
+    pub fn set_upgrade_authority(&mut self, authority: Option<Pubkey>) {
+        use anchor_lang::solana_program::bpf_loader_upgradeable::UpgradeableLoaderState;
+        let mut account = self.svm.get_account(&program_data()).unwrap();
+        bincode::serialize_into(
+            account.data.as_mut_slice(),
+            &UpgradeableLoaderState::ProgramData {
+                slot: 0,
+                upgrade_authority_address: authority,
             },
-            i::InitTree {
-                tree_id: 1,
-                target,
-                supplier: e.supplier.pubkey(),
-                client: e.client.pubkey(),
-                reporter: e.device.pubkey(),
-                max_interval_wh: 10_000,
-            },
-        );
-        e.send(init, 0).unwrap();
+        )
+        .unwrap();
+        self.svm.set_account(program_data(), account).unwrap();
+    }
+    pub fn new(target: u64) -> Self {
+        let mut e = Self::uninitialized();
+        e.send(e.init_admins_ix(vec![e.creator.pubkey()]), 0)
+            .unwrap();
+        e.send(e.init_payment_token_ix(), 0).unwrap();
+        // All demo balances are issued through the permissionless faucet.
+        for (owner, who) in [
+            (e.alice.pubkey(), 1),
+            (e.bob.pubkey(), 2),
+            (e.carol.pubkey(), 3),
+            (e.client.pubkey(), 4),
+            (e.supplier.pubkey(), 6),
+            (e.creator.pubkey(), 0),
+        ] {
+            e.send(e.give_me_money_ix(owner, 1_000_000 * USDC), who)
+                .unwrap();
+        }
+        e.send(e.init_tree_ix(1, target, e.mint), 0).unwrap();
         e
     }
     pub fn send(
@@ -150,6 +116,7 @@ impl Env {
             3 => &self.carol,
             4 => &self.client,
             5 => &self.device,
+            6 => &self.supplier,
             _ => panic!(),
         };
         let tx = Transaction::new(

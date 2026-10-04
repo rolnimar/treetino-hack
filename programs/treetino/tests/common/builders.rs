@@ -1,6 +1,89 @@
 use super::*;
 
 impl Env {
+    pub fn init_admins_ix(&self, admins: Vec<Pubkey>) -> Instruction {
+        ix(
+            a::InitAdmins {
+                authority: self.creator.pubkey(),
+                program: treetino::ID,
+                program_data: program_data(),
+                admin_config: pda(&[seeds::ADMINS]),
+                system_program: system_program::ID,
+            },
+            i::InitAdmins { admins },
+        )
+    }
+    pub fn set_admins_ix(&self, authority: Pubkey, admins: Vec<Pubkey>) -> Instruction {
+        ix(
+            a::SetAdmins {
+                authority,
+                program: treetino::ID,
+                program_data: program_data(),
+                admin_config: pda(&[seeds::ADMINS]),
+            },
+            i::SetAdmins { admins },
+        )
+    }
+    pub fn init_payment_token_ix(&self) -> Instruction {
+        ix(
+            a::InitPaymentToken {
+                payer: self.creator.pubkey(),
+                payment_mint: self.mint,
+                payment_metadata: payment_metadata(&self.mint),
+                metadata_program: metadata::ID,
+                token_program: token::ID,
+                system_program: system_program::ID,
+                rent: Rent::id(),
+            },
+            i::InitPaymentToken {},
+        )
+    }
+    pub fn give_me_money_ix(&self, owner: Pubkey, amount: u64) -> Instruction {
+        ix(
+            a::GiveMeMoney {
+                owner,
+                payment_mint: self.mint,
+                payment_token_account: ata(&owner, &self.mint),
+                associated_token_program: associated_token::ID,
+                token_program: token::ID,
+                system_program: system_program::ID,
+            },
+            i::GiveMeMoney { amount },
+        )
+    }
+    pub fn init_tree_ix(&self, tree_id: u64, target: u64, payment_mint: Pubkey) -> Instruction {
+        self.init_tree_for(self.creator.pubkey(), tree_id, target, payment_mint)
+    }
+    pub fn init_tree_for(
+        &self,
+        creator: Pubkey,
+        tree_id: u64,
+        target: u64,
+        payment_mint: Pubkey,
+    ) -> Instruction {
+        let tree = pda(&[b"tree", creator.as_ref(), &tree_id.to_le_bytes()]);
+        ix(
+            a::InitTree {
+                creator,
+                admin_config: pda(&[seeds::ADMINS]),
+                tree,
+                payment_mint,
+                share_mint: pda(&[b"shares", tree.as_ref()]),
+                funding_token_account: pda(&[b"funding", tree.as_ref()]),
+                revenue_token_account: pda(&[b"revenue", tree.as_ref()]),
+                token_program: token::ID,
+                system_program: system_program::ID,
+            },
+            i::InitTree {
+                tree_id,
+                target,
+                supplier: self.supplier.pubkey(),
+                client: self.client.pubkey(),
+                reporter: self.device.pubkey(),
+                max_interval_wh: 10_000,
+            },
+        )
+    }
     pub fn investor(&self, owner: Pubkey) -> a::BuyShares {
         a::BuyShares {
             owner,

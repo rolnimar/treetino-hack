@@ -11,6 +11,12 @@ pub struct InitTree<'info> {
     )]
     pub creator: Signer<'info>,
     #[account(
+        seeds = [seeds::ADMINS],
+        bump,
+        constraint = admin_config.admins.contains(&creator.key()) @ TreeError::Unauthorized
+    )]
+    pub admin_config: Account<'info, AdminConfig>,
+    #[account(
         init,
         payer = creator,
         space = 8 + Tree::INIT_SPACE,
@@ -19,6 +25,8 @@ pub struct InitTree<'info> {
     )]
     pub tree: Account<'info, Tree>,
     #[account(
+        seeds = [seeds::PAYMENT_MINT],
+        bump,
         constraint = payment_mint.decimals == 6
     )]
     pub payment_mint: Account<'info, Mint>,

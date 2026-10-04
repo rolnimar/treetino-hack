@@ -9,7 +9,10 @@ export const TreetinoErrorCode = {
   "NoRewards": 6006,
   "Overpayment": 6007,
   "InvoiceAlreadyIssued": 6008,
-  "InvoiceNotIssued": 6009
+  "InvoiceNotIssued": 6009,
+  "InvalidPaymentMint": 6010,
+  "Unauthorized": 6011,
+  "InvalidAdmins": 6012
 } as const;
 
 export type TreetinoErrorName = keyof typeof TreetinoErrorCode;

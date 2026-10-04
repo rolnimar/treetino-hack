@@ -11,6 +11,18 @@ declare_id!("EEbZ5DVTQ9f4XeRwmSh4u2QPiMSSmQjqKPNEpDHoBU2n");
 #[program]
 pub mod treetino {
     use super::*;
+    pub fn init_admins(ctx: Context<InitAdmins>, admins: Vec<Pubkey>) -> Result<()> {
+        init_admins::init_admins(ctx, admins)
+    }
+    pub fn set_admins(ctx: Context<SetAdmins>, admins: Vec<Pubkey>) -> Result<()> {
+        set_admins::set_admins(ctx, admins)
+    }
+    pub fn init_payment_token(ctx: Context<InitPaymentToken>) -> Result<()> {
+        init_payment_token::init_payment_token(ctx)
+    }
+    pub fn give_me_money(ctx: Context<GiveMeMoney>, amount: u64) -> Result<()> {
+        give_me_money::give_me_money(ctx, amount)
+    }
     pub fn init_tree(
         ctx: Context<InitTree>,
         tree_id: u64,
