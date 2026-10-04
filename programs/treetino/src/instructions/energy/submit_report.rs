@@ -61,6 +61,7 @@ pub fn submit_report(ctx: Context<SubmitReport>, day_start_ts: i64, wh: Vec<u32>
         invoice_issued: false,
         due: 0,
         paid: 0,
+        reserved: [0; 128],
     });
     emit!(ProductionReported {
         tree: a.tree.key(),

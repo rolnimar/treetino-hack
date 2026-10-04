@@ -1682,6 +1682,18 @@ export type Treetino = {
             "type": {
               "vec": "pubkey"
             }
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields; preserve on updates."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }
@@ -1774,6 +1786,18 @@ export type Treetino = {
           {
             "name": "pendingScaled",
             "type": "u128"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields; preserve on updates."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }
@@ -1856,6 +1880,18 @@ export type Treetino = {
           {
             "name": "paid",
             "type": "u64"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields; preserve on updates."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }
@@ -1993,6 +2029,18 @@ export type Treetino = {
           {
             "name": "rewardRemainder",
             "type": "u128"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields; preserve on updates."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }

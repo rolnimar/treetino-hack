@@ -169,6 +169,7 @@ fn substituting_another_admin_account_cannot_bypass_membership() {
     let mut account = e.svm.get_account(&pda(&[seeds::ADMINS])).unwrap();
     AdminConfig {
         admins: vec![e.alice.pubkey()],
+        reserved: [0; 128],
     }
     .try_serialize(&mut account.data.as_mut_slice())
     .unwrap();

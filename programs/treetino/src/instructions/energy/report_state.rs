@@ -16,4 +16,6 @@ pub struct Report {
     /// Final invoice amount in payment-mint base units; calculated off-chain.
     pub due: u64,
     pub paid: u64,
+    /// Reserved for future fields; preserve on updates.
+    pub reserved: [u8; 128],
 }

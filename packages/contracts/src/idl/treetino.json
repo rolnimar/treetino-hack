@@ -1676,6 +1676,18 @@
             "type": {
               "vec": "pubkey"
             }
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields; preserve on updates."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }
@@ -1768,6 +1780,18 @@
           {
             "name": "pending_scaled",
             "type": "u128"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields; preserve on updates."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }
@@ -1850,6 +1874,18 @@
           {
             "name": "paid",
             "type": "u64"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields; preserve on updates."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }
@@ -1987,6 +2023,18 @@
           {
             "name": "reward_remainder",
             "type": "u128"
+          },
+          {
+            "name": "reserved",
+            "docs": [
+              "Reserved for future fields; preserve on updates."
+            ],
+            "type": {
+              "array": [
+                "u8",
+                128
+              ]
+            }
           }
         ]
       }

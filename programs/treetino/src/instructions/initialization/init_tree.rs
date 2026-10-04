@@ -98,6 +98,7 @@ pub fn init_tree(
         claimed: 0,
         reward_index: 0,
         reward_remainder: 0,
+        reserved: [0; 128],
     });
     emit_tree_changed(&ctx.accounts.tree);
     Ok(())

@@ -31,6 +31,8 @@ pub struct Tree {
     pub claimed: u64,
     pub reward_index: u128,
     pub reward_remainder: u128,
+    /// Reserved for future fields; preserve on updates.
+    pub reserved: [u8; 128],
 }
 impl Tree {
     pub fn seeds(&self) -> [&[u8]; 4] {

@@ -50,6 +50,7 @@ const treeAccount = await coder.accounts.encode('Tree', {
   claimed: new BN(0),
   reward_index: new BN(0),
   reward_remainder: new BN(0),
+  reserved: Array(128).fill(0),
 });
 
 function treeLogs(raised = '0', phase = 'Funding') {

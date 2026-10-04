@@ -25,5 +25,6 @@ pub struct InitAdmins<'info> {
 }
 
 pub fn init_admins(ctx: Context<InitAdmins>, admins: Vec<Pubkey>) -> Result<()> {
+    ctx.accounts.admin_config.reserved = [0; 128];
     ctx.accounts.admin_config.set_admins(admins)
 }

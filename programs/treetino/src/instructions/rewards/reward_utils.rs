@@ -26,6 +26,7 @@ pub fn prepare_position(
     index: u128,
 ) -> Result<()> {
     if position.tree == Pubkey::default() {
+        position.reserved = [0; 128];
         position.tree = tree;
         position.owner = owner;
         position.index = index;

@@ -6,6 +6,8 @@ use anchor_lang::prelude::*;
 pub struct AdminConfig {
     #[max_len(10)]
     pub admins: Vec<Pubkey>,
+    /// Reserved for future fields; preserve on updates.
+    pub reserved: [u8; 128],
 }
 
 impl AdminConfig {

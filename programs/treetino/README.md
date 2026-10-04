@@ -191,6 +191,19 @@ concerns. There is no guaranteed return.
 
 ## Source layout
 
+`Tree`, `Report`, `Position`, and `AdminConfig` each end with a 128-byte
+`reserved` array, initialized to zero and preserved by ordinary updates.
+Future fixed-size fields can consume this reserve by reducing its length by
+the same serialized byte count. Account allocation includes the reserve, so
+newly created accounts allocate it automatically. SPL mints, token accounts, and
+Metaplex metadata retain their externally defined layouts.
+
+Account sizes including the discriminator are 430 bytes for `Tree`, 625 for
+`Report`, 240 for `Position`, and 460 for `AdminConfig` (capacity for 10 admins).
+Accounts created before this reserve was introduced need a separate
+reallocation/migration before the new layout can deserialize them. Upgrading
+the program alone does not expand existing accounts.
+
 The layout follows OnRe's instruction-family modules. Each instruction file
 contains its own `#[derive(Accounts)]` struct and handler; `lib.rs` only
 dispatches entrypoints.
