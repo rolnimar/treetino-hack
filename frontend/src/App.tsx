@@ -1,36 +1,35 @@
 import { AdminAccess } from './AdminAccess';
-import { useEffect, useState } from 'react';
-import type { ProtocolInfo } from '@treetino/contracts';
-
+import { useQuery } from '@tanstack/react-query';
+import { api } from './lib/api';
+import { protocolSchema } from './lib/schemas';
+import { BaseWalletMultiButton } from '@solana/wallet-adapter-react-ui';
+const walletLabels = {
+  'no-wallet': 'Connect wallet',
+  'has-wallet': 'Connect wallet',
+  connecting: 'Connecting…',
+  'change-wallet': 'Change wallet',
+  'copy-address': 'Copy address',
+  copied: 'Copied',
+  disconnect: 'Disconnect',
+};
 export function App() {
-  const [protocol, setProtocol] = useState<ProtocolInfo | null>(null);
-  const [unavailable, setUnavailable] = useState(false);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    fetch('/api/protocol', { signal: controller.signal })
-      .then(async (response) => {
-        if (!response.ok) throw new Error('Backend unavailable');
-        return (await response.json()) as ProtocolInfo;
-      })
-      .then(setProtocol)
-      .catch((error: unknown) => {
-        if (!(error instanceof DOMException && error.name === 'AbortError'))
-          setUnavailable(true);
-      });
-    return () => controller.abort();
-  }, []);
-
+  const { data: protocol, isError: unavailable } = useQuery({
+    queryKey: ['protocol'],
+    queryFn: ({ signal }) => api('protocol', protocolSchema, { signal }),
+  });
   return (
     <main>
       <header>
         <a className="brand" href="/">
           treetino<span aria-hidden="true">↗</span>
         </a>
-        <span className="network">
-          <span className="dot" />
-          Solana devnet
-        </span>
+        <div className="header-controls">
+          <span className="network">
+            <span className="dot" />
+            Solana devnet
+          </span>
+          <BaseWalletMultiButton labels={walletLabels} />
+        </div>
       </header>
       <section className="hero">
         <p className="eyebrow">SHARED OWNERSHIP · CLEAN ENERGY</p>

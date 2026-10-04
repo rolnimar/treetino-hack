@@ -10,12 +10,12 @@ packages/contracts/  Shared generated IDL, program types and API response types
 scripts/             IDL generation
 ```
 
-The frontend currently displays the protocol overview and checks the backend connection.
+The frontend provides the protocol overview, wallet connection and admin workspace.
 The backend exposes health, protocol information, tree listings, indexed event history, and Swagger documentation.
 It polls finalized Solana transactions and preserves their data, decoded Anchor events,
 and its cursor in PostgreSQL through Drizzle ORM. Wallet signature login separates
-public access from admin access. Chain transaction flows and tariff billing are
-still to be implemented.
+public access from admin access. The admin frontend builds, signs, and submits
+chain management transactions. Tariff calculation is still to be implemented.
 The program's lifecycle, token behavior and reward rules are documented in
 [programs/treetino/README.md](programs/treetino/README.md).
 
@@ -75,10 +75,12 @@ or instructions. The program address is unchanged by the project rename.
 
 ## Public and admin access
 
-Public endpoints and browsing work without login. The frontend discovers installed
-Wallet Standard Solana wallets (including Phantom and Solflare), connects the selected
-wallet and asks it to sign a server-issued message. Signing the login challenge does
-not submit a transaction.
+Public endpoints and browsing work without login. One Connect wallet button opens
+the Solana wallet-adapter picker. Phantom and Solflare are explicitly available;
+other installed Wallet Standard wallets are discovered automatically. The shared
+provider connects the selected wallet. **Sign in as admin** asks the wallet to
+sign a server-issued message. Signing that challenge does not submit a transaction.
+Switching accounts or disconnecting clears the admin session.
 
 The `admins` table contains only a generated UUID `id` and a unique `wallet` address.
 Add the first admin from `backend/` (using the same `DATABASE_URL` as the backend):
@@ -129,8 +131,61 @@ use the frontend's HTTPS origin for `AUTH_ORIGIN`.
 
 Database admin access controls backend routes and frontend visibility. Chain admin
 instructions still enforce the program's own admin accounts; a JWT does not grant
-on-chain authority. The initial admin workspace shows the authenticated wallet;
-chain management actions can be added there next.
+on-chain authority. The admin workspace fetches trees from `GET /api/trees`, with
+phase filters, pagination and polling every 10 seconds. New trees appear after the
+backend indexer observes initialization. The tree ID is chosen in the creation form;
+the database assigns a separate UUID. The workspace builds transactions on the frontend
+using the shared IDL and the connected wallet signs them. The frontend submits
+signed transactions directly to Solana and waits for confirmation. The backend
+handles wallet login and indexed public history; it does not construct or relay
+admin transactions.
+
+After signing in, use the admin tabs in this order:
+
+1. **Protocol setup**: initialize chain admins as the current program upgrade
+   authority. Include your own wallet if it should create trees. Later, use
+   **Update chain admins** to replace the list (1–10 distinct nonzero wallets).
+2. **Protocol setup**: initialize the mockUSDC payment token and metadata once.
+3. **Create tree**: enter a creator-scoped integer tree ID, funding target in
+   mockUSDC, supplier, client and reporter.
+   Your wallet must be in the chain admin list.
+4. **Trees**: inspect indexed trees, filter by phase, page through results, and
+   purchase fully funded trees. Purchase sends the target to the supplier's
+   payment ATA, creating that account in the same transaction if necessary.
+5. **Trees**: activate purchased trees with a future UTC first billing day.
+   The creator can load active tree reports and issue a final invoice, including
+   a zero invoice. Invoice amounts cannot be changed after issuance.
+6. **Demo faucet**: mint demo mockUSDC to your wallet's payment ATA.
+
+Purchase, activation and invoice actions require the original tree creator,
+even if chain admin membership later changes. Report submission remains the
+configured device's role; payment and reward claims belong to clients and holders.
+Those user/device flows are not admin controls.
+
+PDA seeds, little-endian integer seeds and ATA derivation live in
+`frontend/src/chain/addresses.ts`. Instruction account metas and Borsh arguments
+come from the JSON IDL in `frontend/src/chain/instructions.ts`. Protocol and report
+reads live in `read.ts`, transaction construction and permission checks in `build.ts`,
+and wallet signing, submission and confirmation polling in `transaction.ts`. `client.ts`
+exposes these operations to the admin hooks. Token inputs use exact six-decimal
+integer conversion, without floating-point arithmetic.
+
+The frontend groups authentication and admin screens under `src/features`, reusable
+controls under `src/components/ui`, and API validation under `src/lib`. TanStack
+Query handles server state and cache invalidation. React Hook Form and Zod validate
+forms; Zod also checks API responses and transaction inputs. Admin styling uses
+Tailwind CSS through its Vite plugin. `rtk proxy bun run lint` checks React hooks
+and TypeScript rules. `rtk proxy bun run test` includes backend integration tests
+and frontend transaction/schema tests. Builds use the native TypeScript 7 compiler;
+the TypeScript 6 alias supplies the JavaScript API required by ESLint.
+
+Set frontend `VITE_SOLANA_RPC_URL` to a **public browser-accessible devnet RPC**
+if needed. The default is `https://api.devnet.solana.com`. This URL is bundled
+into the frontend and must not contain private credentials. Backend
+`SOLANA_RPC_URL` configures the indexer separately; point both at devnet.
+Changing a Vite variable requires rebuilding the frontend. Docker supports
+`--build-arg VITE_SOLANA_RPC_URL=...`. The frontend checks the genesis hash before
+building transactions, so pointing it at another cluster stops admin actions.
 
 ## Event history
 
