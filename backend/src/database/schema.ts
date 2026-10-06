@@ -2,6 +2,7 @@ import {
   foreignKey,
   index,
   integer,
+  boolean,
   pgTable,
   uuid,
   jsonb,
@@ -11,7 +12,7 @@ import {
   uniqueIndex,
   unique,
 } from 'drizzle-orm/pg-core';
-import type { TreePhase } from '@treetino/contracts';
+import type { TreePhase, InvoicePricing } from '@treetino/contracts';
 
 const uuidPrimaryKey = () => uuid('id').primaryKey().defaultRandom();
 
@@ -144,3 +145,100 @@ export const authChallenges = pgTable(
   },
   (table) => [index('auth_challenges_expiry').on(table.expiresAt)],
 );
+
+export const indexedReports = pgTable(
+  'indexed_reports',
+  {
+    id: uuidPrimaryKey(),
+    stream: text('stream')
+      .notNull()
+      .references(() => indexerState.stream),
+    address: text('address').notNull(),
+    tree: text('tree').notNull(),
+    dayStartTs: text('day_start_ts').notNull(),
+    submittedAt: text('submitted_at').notNull(),
+    reporter: text('reporter').notNull(),
+    wh: jsonb('wh').$type<number[]>().notNull(),
+    totalWh: text('total_wh').notNull(),
+    invoiceIssued: boolean('invoice_issued').notNull(),
+    due: text('due').notNull(),
+    paid: text('paid').notNull(),
+    pricing: jsonb('pricing').$type<InvoicePricing>(),
+    pricingError: text('pricing_error'),
+    signature: text('signature').notNull(),
+    blockTime: bigint('block_time', { mode: 'number' }).notNull(),
+  },
+  (table) => [
+    uniqueIndex('indexed_reports_stream_address').on(
+      table.stream,
+      table.address,
+    ),
+    index('indexed_reports_stream_tree').on(table.stream, table.tree),
+  ],
+);
+
+export type IndexedReportInput = Omit<
+  typeof indexedReports.$inferInsert,
+  'id' | 'stream' | 'signature' | 'blockTime' | 'pricing' | 'pricingError'
+>;
+
+// Devnet-only simulated device keys. Never return secretKey from an API.
+export const mockReporters = pgTable(
+  'mock_reporters',
+  {
+    id: uuidPrimaryKey(),
+    stream: text('stream').notNull(),
+    tree: text('tree').notNull(),
+    creator: text('creator').notNull(),
+    wallet: text('wallet').notNull(),
+    secretKey: text('secret_key').notNull(),
+    lastSignature: text('last_signature'),
+    lastError: text('last_error'),
+    balanceLamports: text('balance_lamports'),
+    leaseOwner: text('lease_owner'),
+    leaseUntil: bigint('lease_until', { mode: 'number' }).notNull().default(0),
+  },
+  (table) => [
+    uniqueIndex('mock_reporters_stream_tree').on(table.stream, table.tree),
+  ],
+);
+
+export const mockReportJobs = pgTable(
+  'mock_report_jobs',
+  {
+    id: uuidPrimaryKey(),
+    reporterId: uuid('reporter_id')
+      .notNull()
+      .references(() => mockReporters.id),
+    report: text('report').notNull(),
+    dayStartTs: text('day_start_ts').notNull(),
+    rawTransaction: text('raw_transaction').notNull(),
+    signature: text('signature').notNull(),
+    lastValidBlockHeight: bigint('last_valid_block_height', {
+      mode: 'number',
+    }).notNull(),
+    confirmed: boolean('confirmed').notNull().default(false),
+  },
+  (table) => [
+    uniqueIndex('mock_report_jobs_reporter_day').on(
+      table.reporterId,
+      table.dayStartTs,
+    ),
+  ],
+);
+
+export interface SpotPriceQuote {
+  method: 'quarter-hour';
+  date: string;
+  intervals: { startTs: string; eurPerMwh: string }[];
+  eurCzk: string;
+  usdCzk: string;
+  exchangeRateDate: string;
+  priceSource: string;
+  exchangeRateSource: string;
+}
+export const dailySpotPrices = pgTable('daily_spot_prices', {
+  id: uuidPrimaryKey(),
+  date: text('date').notNull().unique(),
+  quote: jsonb('quote').$type<SpotPriceQuote>().notNull(),
+});

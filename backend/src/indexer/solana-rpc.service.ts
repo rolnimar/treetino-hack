@@ -5,7 +5,7 @@ import { IndexerConfig } from './indexer.config';
 
 @Injectable()
 export class SolanaRpcService {
-  private readonly connection: Connection;
+  readonly connection: Connection;
   private readonly programId = new PublicKey(TREETINO_PROGRAM_ID);
 
   constructor(config: IndexerConfig) {
@@ -32,6 +32,10 @@ export class SolanaRpcService {
       commitment: 'confirmed',
       minContextSlot,
     });
+  }
+
+  getReportAccount(address: string, minContextSlot: number) {
+    return this.getTreeAccount(address, minContextSlot);
   }
 
   getSignatures(before?: string) {

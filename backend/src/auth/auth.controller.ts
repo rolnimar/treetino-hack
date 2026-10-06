@@ -59,6 +59,41 @@ export class AdminGuard implements CanActivate {
   }
 }
 
+class ClientDto {
+  @ApiProperty() wallet!: string;
+}
+class ClientSessionDto {
+  @ApiProperty() accessToken!: string;
+  @ApiProperty({ format: 'date-time' }) expiresAt!: string;
+  @ApiProperty({ type: ClientDto }) client!: ClientDto;
+}
+export type ClientRequest = {
+  headers: { authorization?: string };
+  client: { wallet: string };
+};
+@Injectable()
+export class ClientGuard implements CanActivate {
+  constructor(private readonly auth: AuthService) {}
+  async canActivate(context: ExecutionContext) {
+    const request = context.switchToHttp().getRequest<ClientRequest>();
+    request.client = await this.auth.authenticateClient(
+      request.headers.authorization,
+    );
+    return true;
+  }
+}
+@Controller('client')
+@ApiTags('Client')
+@ApiBearerAuth()
+@UseGuards(ClientGuard)
+export class ClientController {
+  @Get('me')
+  @ApiOkResponse({ type: ClientDto })
+  me(@Req() request: ClientRequest) {
+    return request.client;
+  }
+}
+
 @Controller('auth')
 @ApiTags('Authentication')
 @UseGuards(ThrottlerGuard)
@@ -69,6 +104,21 @@ export class AuthController {
   @ApiBadRequestResponse({ description: 'Invalid wallet' })
   challenge(@Body() body: ChallengeRequest) {
     return this.auth.challenge(body?.wallet);
+  }
+  @Post('client/challenge')
+  @ApiCreatedResponse({ type: ChallengeDto })
+  clientChallenge(@Body() body: ChallengeRequest) {
+    return this.auth.challenge(body?.wallet, 'client');
+  }
+  @Post('client/login')
+  @ApiCreatedResponse({ type: ClientSessionDto })
+  clientLogin(@Body() body: LoginRequest) {
+    return this.auth.login(
+      body?.challengeId,
+      body?.wallet,
+      body?.signature,
+      'client',
+    );
   }
   @Post('login')
   @ApiCreatedResponse({ type: SessionDto })

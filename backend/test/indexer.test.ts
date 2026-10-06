@@ -10,6 +10,7 @@ import { IndexerRepository } from '../dist/indexer/indexer.repository.js';
 import { DatabaseService } from '../dist/database/database.service.js';
 import { SolanaRpcService } from '../dist/indexer/solana-rpc.service.js';
 import { createApplication } from '../dist/application.js';
+import { reportAddress } from '../dist/indexer/report.decoder.js';
 import { decodeTree } from '../dist/indexer/tree.decoder.js';
 
 const startTime = Date.parse('2026-10-04T00:00:00Z') / 1000;
@@ -52,6 +53,20 @@ const treeAccount = await coder.accounts.encode('Tree', {
   reserved: Array(128).fill(0),
 });
 
+const reportKey = reportAddress(treeAddress, String(startTime));
+const reportAccount = await coder.accounts.encode('Report', {
+  tree: treeAddress,
+  day_start_ts: new BN(startTime),
+  submitted_at: new BN(startTime + 86400),
+  reporter: programId,
+  wh: [4294967295],
+  total_wh: new BN('4294967295'),
+  invoice_issued: true,
+  due: new BN('18446744073709551615'),
+  paid: new BN('18446744073709551615'),
+  reserved: Array(128).fill(0),
+});
+
 function treeLogs(raised = '0', phase = 'Funding') {
   const discriminator = TREETINO_IDL.events!.find(
     (e) => (e.name as string) === 'TreeChanged',
@@ -77,8 +92,8 @@ const eventId = TREETINO_IDL.events!.find(
 const data = Buffer.concat([
   Buffer.from(eventId),
   coder.types.encode('InvoicePaid', {
-    tree: new PublicKey(TREETINO_PROGRAM_ID),
-    report: PublicKey.default,
+    tree: treeAddress,
+    report: reportKey,
     amount: new BN('18446744073709551615'),
   }),
 ]).toString('base64');
@@ -143,6 +158,8 @@ async function fixture() {
   let offline = false;
   let missingTree = false;
   let treeOwner: string = TREETINO_PROGRAM_ID;
+  const extraReports = new Map<string, Buffer>();
+  let missingReport = false;
   const requests: { method: string; params: unknown[] }[] = [];
   const server = Bun.serve({
     port: 0,
@@ -181,18 +198,31 @@ async function fixture() {
           ? null
           : transaction(logs);
       } else if (method === 'getAccountInfo') {
-        expect(params[0]).toBe(treeAddress.toBase58());
+        expect([
+          treeAddress.toBase58(),
+          reportKey.toBase58(),
+          ...extraReports.keys(),
+        ]).toContain(params[0] as string);
+        const isReport =
+          params[0] === reportKey.toBase58() ||
+          extraReports.has(params[0] as string);
         expect(params[1]).toMatchObject({
           commitment: 'confirmed',
           minContextSlot: 100,
         });
         result = {
           context: { slot: 100 },
-          value: missingTree
+          value: (isReport ? missingReport : missingTree)
             ? null
             : {
-                data: [treeAccount.toString('base64'), 'base64'],
-                owner: treeOwner,
+                data: [
+                  (
+                    extraReports.get(params[0] as string) ??
+                    (isReport ? reportAccount : treeAccount)
+                  ).toString('base64'),
+                  'base64',
+                ],
+                owner: isReport ? TREETINO_PROGRAM_ID : treeOwner,
                 executable: false,
                 lamports: 10000,
                 rentEpoch: 0,
@@ -235,6 +265,7 @@ async function fixture() {
     database,
     worker,
     requests,
+    extraReports,
     setHistory: (entries: ReturnType<typeof signature>[]) => {
       history = entries;
     },
@@ -253,10 +284,166 @@ async function fixture() {
     setTreeOwner: (value: string) => {
       treeOwner = value;
     },
+    setMissingReport: (value: boolean) => {
+      missingReport = value;
+    },
   };
 }
 
 describe('Solana polling worker with real RPC decoding and PostgreSQL', () => {
+  test('a report for a day before the indexer start is loaded when its submission transaction is new', async () => {
+    const f = await fixture();
+    const historicDay = String(startTime - 4 * 86400);
+    const address = reportAddress(treeAddress, historicDay);
+    f.extraReports.set(
+      address.toBase58(),
+      await coder.accounts.encode('Report', {
+        tree: treeAddress,
+        day_start_ts: new BN(historicDay),
+        submitted_at: new BN(startTime),
+        reporter: programId,
+        wh: [11, 22, 0],
+        total_wh: new BN(33),
+        invoice_issued: false,
+        due: new BN(0),
+        paid: new BN(0),
+        reserved: Array(128).fill(0),
+      }),
+    );
+    const definition = TREETINO_IDL.events!.find(
+      (e) => (e.name as string) === 'ProductionReported',
+    )!;
+    const data = Buffer.concat([
+      Buffer.from(definition.discriminator),
+      coder.types.encode('ProductionReported', {
+        tree: treeAddress,
+        report: address,
+        day_start_ts: new BN(historicDay),
+        total_wh: new BN(33),
+      }),
+    ]).toString('base64');
+    f.setHistory([signature('historic-report-created-now')]);
+    f.setLogs([
+      `Program ${TREETINO_PROGRAM_ID} invoke [1]`,
+      `Program data: ${data}`,
+      `Program ${TREETINO_PROGRAM_ID} success`,
+    ]);
+    await f.worker.poll();
+    expect(
+      (await f.worker.listReports(treeAddress.toBase58(), 20, 0)).reports[0],
+    ).toMatchObject({
+      address: address.toBase58(),
+      dayStartTs: historicDay,
+      wh: [11, 22, 0],
+      totalWh: '33',
+    });
+    expect((await f.worker.getStatus()).cursor).toBe(
+      'historic-report-created-now',
+    );
+  });
+  test('ProductionReported is indexed at confirmed commitment with the raw quarter-hour readings', async () => {
+    const f = await fixture();
+    const event = TREETINO_IDL.events!.find(
+      (e) => (e.name as string) === 'ProductionReported',
+    )!;
+    const encoded = Buffer.concat([
+      Buffer.from(event.discriminator),
+      coder.types.encode('ProductionReported', {
+        tree: treeAddress,
+        report: reportKey,
+        day_start_ts: new BN(startTime),
+        total_wh: new BN('4294967295'),
+      }),
+    ]).toString('base64');
+    f.setLogs([
+      `Program ${TREETINO_PROGRAM_ID} invoke [1]`,
+      `Program data: ${encoded}`,
+      `Program ${TREETINO_PROGRAM_ID} success`,
+    ]);
+    f.setHistory([signature('simulated-report')]);
+    await f.worker.poll();
+    expect(await f.worker.getStatus()).toMatchObject({
+      cursor: 'simulated-report',
+      events: 1,
+      lastError: null,
+    });
+    const result = await f.worker.listReports(treeAddress.toBase58(), 20, 0);
+    expect(result.total).toBe(1);
+    expect(result.reports[0]).toMatchObject({
+      address: reportKey.toBase58(),
+      wh: [4294967295],
+      signature: 'simulated-report',
+    });
+    expect((await f.repository.listEvents(stream, 0, 20))[0]!.name).toBe(
+      'ProductionReported',
+    );
+    expect(
+      f.requests.find((r) => r.method === 'getTransaction')!.params[1],
+    ).toMatchObject({ commitment: 'confirmed' });
+    await f.worker.poll();
+    expect(
+      (await f.worker.listReports(treeAddress.toBase58(), 20, 0)).total,
+    ).toBe(1);
+  });
+  test('report projection retries missing accounts, accepts arbitrary readings, and recovers previously indexed history', async () => {
+    const f = await fixture();
+    f.setHistory([signature('paid')]);
+    f.setMissingReport(true);
+    await f.worker.poll();
+    expect(await f.worker.getStatus()).toMatchObject({
+      cursor: null,
+      transactions: 0,
+      events: 0,
+    });
+    f.setMissingReport(false);
+    await f.worker.poll();
+    const response = await f.worker.listReports(treeAddress.toBase58(), 20, 0);
+    expect(response.total).toBe(1);
+    expect(response.reports[0]).toMatchObject({
+      wh: [4294967295],
+      totalWh: '4294967295',
+      invoiceIssued: true,
+      due: '18446744073709551615',
+      paid: '18446744073709551615',
+      pricing: null,
+    });
+    // Simulate upgrading a database whose raw events predate report projection.
+    await f.testDb.sql`DELETE FROM indexed_reports`;
+    f.requests.length = 0;
+    await f.worker.poll();
+    expect(
+      (await f.worker.listReports(treeAddress.toBase58(), 20, 0)).total,
+    ).toBe(1);
+    expect(
+      f.requests.filter((r) => r.method === 'getTransaction'),
+    ).toHaveLength(0);
+    expect((await f.worker.getStatus()).cursor).toBe('paid');
+  });
+
+  test('report write failure rolls back raw history and cursor', async () => {
+    const f = await fixture();
+    f.setHistory([signature('paid')]);
+    await f.testDb.sql.unsafe(
+      `CREATE FUNCTION reject_report() RETURNS trigger LANGUAGE plpgsql AS $$ BEGIN RAISE EXCEPTION 'test report failure'; END; $$`,
+    );
+    await f.testDb.sql.unsafe(
+      `CREATE TRIGGER reject_report BEFORE INSERT ON indexed_reports FOR EACH ROW EXECUTE FUNCTION reject_report()`,
+    );
+    await f.worker.poll();
+    expect(await f.worker.getStatus()).toMatchObject({
+      cursor: null,
+      transactions: 0,
+      events: 0,
+    });
+    await f.testDb.sql.unsafe('DROP TRIGGER reject_report ON indexed_reports');
+    await f.worker.poll();
+    expect(await f.worker.getStatus()).toMatchObject({
+      cursor: 'paid',
+      transactions: 1,
+      events: 1,
+      lastError: null,
+    });
+  });
   test('discovers trees, serves their purchase accounts publicly, and updates funding without duplicates', async () => {
     const f = await fixture();
     f.setHistory([signature('init')]);
@@ -413,8 +600,8 @@ describe('Solana polling worker with real RPC decoding and PostgreSQL', () => {
     const events = (await f.worker.listEvents(0, 100)).events;
     expect(events.map((e) => e.signature)).toEqual(['a', 'b', 'c']);
     expect(events[0].data).toEqual({
-      tree: TREETINO_PROGRAM_ID,
-      report: PublicKey.default.toBase58(),
+      tree: treeAddress.toBase58(),
+      report: reportKey.toBase58(),
       amount: '18446744073709551615',
     });
     expect(

@@ -190,7 +190,7 @@ describe('automatic PostgreSQL migrations', () => {
       readFileSync(join(config.migrationsFolder, 'meta/_journal.json'), 'utf8'),
     );
     const previousEntries = journal.entries.filter(
-      (entry: { tag: string }) => entry.tag !== '0002_remove_energy_limits',
+      (entry: { idx: number }) => entry.idx < 2,
     );
     for (const entry of previousEntries) {
       writeFileSync(

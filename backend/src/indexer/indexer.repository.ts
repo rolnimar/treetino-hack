@@ -1,16 +1,23 @@
 import { Injectable } from '@nestjs/common';
-import { and, count, eq, gt } from 'drizzle-orm';
+import { and, count, eq, gt, desc, inArray, isNull, sql } from 'drizzle-orm';
 import { DatabaseService } from '../database/database.service';
 import {
   indexedEvents,
   indexedTrees,
+  indexedReports,
   indexedTransactions,
   indexerSources,
   indexerState,
   type IndexerState,
   type IndexedTreeInput,
+  type IndexedReportInput,
 } from '../database/schema';
-import type { TreeInfo, TreePhase, TreesResponse } from '@treetino/contracts';
+import type {
+  TreeInfo,
+  TreePhase,
+  TreesResponse,
+  TreeReportsResponse,
+} from '@treetino/contracts';
 
 export interface IndexedEvent {
   name: string;
@@ -76,6 +83,7 @@ export class IndexerRepository {
     transaction: unknown,
     events: IndexedEvent[],
     trees: IndexedTreeInput[] = [],
+    reports: IndexedReportInput[] = [],
   ) {
     await this.database.db.transaction(async (tx) => {
       await tx
@@ -118,6 +126,8 @@ export class IndexerRepository {
             set: values,
           });
       }
+      for (const report of reports)
+        await this.saveReport(tx, stream, signature, blockTime, report);
       await tx
         .update(indexerState)
         .set({ cursor: signature })
@@ -125,15 +135,117 @@ export class IndexerRepository {
     });
   }
 
+  private async saveReport(
+    db: Pick<DatabaseService['db'], 'insert'>,
+    stream: string,
+    signature: string,
+    blockTime: number,
+    report: IndexedReportInput,
+  ) {
+    const values = { ...report, stream, signature, blockTime };
+    await db
+      .insert(indexedReports)
+      .values(values)
+      .onConflictDoUpdate({
+        target: [indexedReports.stream, indexedReports.address],
+        set: values,
+      });
+  }
+
+  async saveBackfilledReport(
+    stream: string,
+    signature: string,
+    blockTime: number,
+    report: IndexedReportInput,
+  ) {
+    await this.saveReport(
+      this.database.db,
+      stream,
+      signature,
+      blockTime,
+      report,
+    );
+  }
+
+  async unprojectedReports(stream: string) {
+    return this.database.db
+      .select({
+        data: indexedEvents.data,
+        signature: indexedEvents.signature,
+        blockTime: indexedTransactions.blockTime,
+        slot: indexedTransactions.slot,
+      })
+      .from(indexedEvents)
+      .innerJoin(
+        indexedTransactions,
+        and(
+          eq(indexedTransactions.stream, indexedEvents.stream),
+          eq(indexedTransactions.signature, indexedEvents.signature),
+        ),
+      )
+      .leftJoin(
+        indexedReports,
+        and(
+          eq(indexedReports.stream, indexedEvents.stream),
+          eq(indexedReports.address, sql`${indexedEvents.data}->>'report'`),
+        ),
+      )
+      .where(
+        and(
+          eq(indexedEvents.stream, stream),
+          inArray(indexedEvents.name, [
+            'ProductionReported',
+            'InvoiceIssued',
+            'InvoicePaid',
+          ]),
+          isNull(indexedReports.id),
+        ),
+      )
+      .orderBy(desc(indexedEvents.sequence))
+      .limit(100);
+  }
+
+  async listReports(
+    stream: string,
+    tree: string,
+    limit: number,
+    offset: number,
+  ): Promise<TreeReportsResponse> {
+    const filter = and(
+      eq(indexedReports.stream, stream),
+      eq(indexedReports.tree, tree),
+    );
+    const rows = await this.database.db
+      .select()
+      .from(indexedReports)
+      .where(filter)
+      .orderBy(desc(sql`${indexedReports.dayStartTs}::bigint`))
+      .limit(limit)
+      .offset(offset);
+    const [result] = await this.database.db
+      .select({ count: count() })
+      .from(indexedReports)
+      .where(filter);
+    return {
+      reports: rows.map(({ stream: _stream, blockTime, ...report }) => ({
+        ...report,
+        updatedAt: new Date(blockTime * 1000).toISOString(),
+      })),
+      total: result!.count,
+    };
+  }
+
   async listTrees(
     stream: string,
     phase: TreePhase | undefined,
     limit: number,
     offset: number,
+    client?: string,
   ): Promise<TreesResponse> {
     const filter = and(
       eq(indexedTrees.stream, stream),
       phase ? eq(indexedTrees.phase, phase) : undefined,
+      client ? eq(indexedTrees.client, client) : undefined,
     );
     const rows = await this.database.db
       .select()
@@ -158,6 +270,21 @@ export class IndexerRepository {
       .from(indexedTrees)
       .where(filter);
     return { trees, total: result!.count };
+  }
+
+  async ownsClientTree(stream: string, address: string, wallet: string) {
+    const [tree] = await this.database.db
+      .select({ id: indexedTrees.id })
+      .from(indexedTrees)
+      .where(
+        and(
+          eq(indexedTrees.stream, stream),
+          eq(indexedTrees.address, address),
+          eq(indexedTrees.client, wallet),
+        ),
+      )
+      .limit(1);
+    return !!tree;
   }
 
   async listEvents(stream: string, after: number, limit: number) {

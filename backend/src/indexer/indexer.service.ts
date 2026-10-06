@@ -1,6 +1,7 @@
 import {
   Injectable,
   Logger,
+  NotFoundException,
   type OnModuleInit,
   type OnApplicationBootstrap,
   type BeforeApplicationShutdown,
@@ -18,6 +19,7 @@ import type { IndexerState } from '../database/schema';
 import { IndexerRepository } from './indexer.repository';
 import { SolanaRpcService } from './solana-rpc.service';
 import { decodeTree } from './tree.decoder';
+import { decodeReport } from './report.decoder';
 
 // Preserve u64/i64 precision and store public keys as base58 strings.
 function normalize(value: unknown): unknown {
@@ -100,6 +102,19 @@ export class IndexerService
       TREETINO_PROGRAM_ID,
     );
     const state = this.state;
+    const backfilled = new Set<string>();
+    for (const saved of await this.repository.unprojectedReports(stream)) {
+      const event = saved.data as { report: string; tree: string };
+      if (backfilled.has(event.report)) continue;
+      const account = await this.rpc.getReportAccount(event.report, saved.slot);
+      await this.repository.saveBackfilledReport(
+        stream,
+        saved.signature,
+        saved.blockTime,
+        decodeReport(event.report, event.tree, account),
+      );
+      backfilled.add(event.report);
+    }
     const pending: (ConfirmedSignatureInfo & { blockTime: number })[] = [];
     let before: string | undefined;
     let boundaryFound = false;
@@ -169,7 +184,25 @@ export class IndexerService
         }));
       }
       const trees = [];
+      const reports = [];
       for (const event of events) {
+        if (
+          ['ProductionReported', 'InvoiceIssued', 'InvoicePaid'].includes(
+            event.name,
+          )
+        ) {
+          const { report: address, tree } = event.data as {
+            report: string;
+            tree: string;
+          };
+          reports.push(
+            decodeReport(
+              address,
+              tree,
+              await this.rpc.getReportAccount(address, entry.slot),
+            ),
+          );
+        }
         if (event.name !== 'TreeChanged') continue;
         const { tree: address } = event.data as { tree: string };
         const account = await this.rpc.getTreeAccount(address, entry.slot);
@@ -184,6 +217,7 @@ export class IndexerService
         transaction,
         events,
         trees,
+        reports,
       );
       state.cursor = entry.signature;
     }
@@ -221,6 +255,37 @@ export class IndexerService
     return this.state
       ? this.repository.listTrees(this.state.stream, phase, limit, offset)
       : { trees: [], total: 0 };
+  }
+
+  async listClientTrees(wallet: string, limit: number, offset: number) {
+    return this.state
+      ? this.repository.listTrees(
+          this.state.stream,
+          undefined,
+          limit,
+          offset,
+          wallet,
+        )
+      : { trees: [], total: 0 };
+  }
+  async listClientReports(
+    wallet: string,
+    tree: string,
+    limit: number,
+    offset: number,
+  ) {
+    if (
+      !this.state ||
+      !(await this.repository.ownsClientTree(this.state.stream, tree, wallet))
+    )
+      throw new NotFoundException('Tree not assigned to this client');
+    return this.repository.listReports(this.state.stream, tree, limit, offset);
+  }
+
+  async listReports(tree: string, limit: number, offset: number) {
+    return this.state
+      ? this.repository.listReports(this.state.stream, tree, limit, offset)
+      : { reports: [], total: 0 };
   }
 
   async beforeApplicationShutdown() {

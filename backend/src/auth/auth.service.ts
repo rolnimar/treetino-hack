@@ -44,11 +44,11 @@ export class AuthService {
       throw new Error('AUTH_ORIGIN is required in production');
   }
 
-  async challenge(input: unknown) {
+  async challenge(input: unknown, role: 'admin' | 'client' = 'admin') {
     const wallet = validateWallet(input);
     const id = randomUUID();
     const expiresAt = Date.now() + 5 * 60_000;
-    const message = `${this.origin} requests Treetino admin access.\n\nWallet: ${wallet}\nNonce: ${id}\nIssued at: ${new Date().toISOString()}\nExpires at: ${new Date(expiresAt).toISOString()}\n\nSigning this message authenticates you. It does not send a transaction.`;
+    const message = `${this.origin} requests Treetino ${role} access.\n\nWallet: ${wallet}\nNonce: ${id}\nIssued at: ${new Date().toISOString()}\nExpires at: ${new Date(expiresAt).toISOString()}\n\nSigning this message authenticates you. It does not send a transaction.`;
     await this.database.db
       .delete(authChallenges)
       .where(lte(authChallenges.expiresAt, Date.now()));
@@ -58,7 +58,12 @@ export class AuthService {
     return { id, message, expiresAt: new Date(expiresAt).toISOString() };
   }
 
-  async login(id: unknown, input: unknown, signature: unknown) {
+  async login(
+    id: unknown,
+    input: unknown,
+    signature: unknown,
+    role: 'admin' | 'client' = 'admin',
+  ) {
     const wallet = validateWallet(input);
     if (
       typeof id !== 'string' ||
@@ -79,6 +84,14 @@ export class AuthService {
       );
     if (!challenge)
       throw new UnauthorizedException('Challenge expired or already used');
+    if (
+      !challenge.message.startsWith(
+        `${this.origin} requests Treetino ${role} access.\n`,
+      )
+    )
+      throw new UnauthorizedException(
+        'Challenge is for a different access role',
+      );
     let valid = false;
     try {
       if (typeof signature !== 'string' || signature.length > 88)
@@ -110,6 +123,22 @@ export class AuthService {
       .returning({ id: authChallenges.id });
     if (!consumed.length)
       throw new UnauthorizedException('Challenge expired or already used');
+    if (role === 'client') {
+      const expires = Math.floor(Date.now() / 1000) + 3600;
+      const accessToken = await new SignJWT({ wallet, role: 'client' })
+        .setProtectedHeader({ alg: 'HS256', typ: 'JWT' })
+        .setSubject(wallet)
+        .setIssuer('treetino')
+        .setAudience('treetino-client')
+        .setIssuedAt()
+        .setExpirationTime(expires)
+        .sign(this.secret);
+      return {
+        accessToken,
+        expiresAt: new Date(expires * 1000).toISOString(),
+        client: { wallet },
+      };
+    }
     const [admin] = await this.database.db
       .select()
       .from(admins)
@@ -129,6 +158,28 @@ export class AuthService {
       expiresAt: new Date(expires * 1000).toISOString(),
       admin,
     };
+  }
+
+  async authenticateClient(header: string | undefined) {
+    if (!header?.startsWith('Bearer '))
+      throw new UnauthorizedException('Client bearer token required');
+    try {
+      const { payload } = await jwtVerify(header.slice(7), this.secret, {
+        algorithms: ['HS256'],
+        issuer: 'treetino',
+        audience: 'treetino-client',
+        requiredClaims: ['exp', 'iat', 'sub'],
+      });
+      if (
+        payload.role !== 'client' ||
+        typeof payload.wallet !== 'string' ||
+        payload.sub !== payload.wallet
+      )
+        throw new Error();
+      return { wallet: payload.wallet };
+    } catch {
+      throw new UnauthorizedException('Invalid or expired client token');
+    }
   }
 
   async authenticate(header: string | undefined) {

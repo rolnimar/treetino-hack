@@ -1,10 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
+import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import type {
   ApiHealth,
   ProtocolInfo,
   TreeInfo,
   TreePhase,
   TreesResponse,
+  TreeReport,
+  TreeReportsResponse,
+  InvoicePricing,
+  MockReporterInfo,
 } from '@treetino/contracts';
 
 export class HealthDto implements ApiHealth {
@@ -72,6 +76,109 @@ export class TreesDto implements TreesResponse {
     description: 'Total matching trees before pagination.',
   })
   total!: number;
+}
+
+export class InvoicePricingIntervalDto {
+  @ApiProperty({ description: '15-minute interval start, Unix seconds UTC' })
+  startTs!: string;
+  @ApiProperty({ description: 'Indexed on-chain production reading' })
+  wh!: number;
+  @ApiProperty() eurPerMwh!: string;
+  @ApiProperty() czkPerKwh!: string;
+  @ApiProperty() totalCzk!: string;
+}
+export class PriceSourceDto {
+  @ApiProperty({ format: 'date' }) date!: string;
+  @ApiProperty() url!: string;
+}
+export class InvoicePricingDto implements InvoicePricing {
+  @ApiProperty({ format: 'date' }) date!: string;
+  @ApiPropertyOptional({
+    enum: ['quarter-hour'],
+    description: 'Absent on historical invoices billed with a daily average',
+  })
+  method?: 'quarter-hour';
+  @ApiPropertyOptional({ type: [InvoicePricingIntervalDto] })
+  intervals?: InvoicePricingIntervalDto[];
+  @ApiPropertyOptional({ type: [PriceSourceDto] })
+  priceSources?: PriceSourceDto[];
+  @ApiPropertyOptional() eurPerMwh?: string;
+  @ApiProperty() eurCzk!: string;
+  @ApiProperty() usdCzk!: string;
+  @ApiProperty({ format: 'date' }) exchangeRateDate!: string;
+  @ApiPropertyOptional() czkPerKwh?: string;
+  @ApiProperty() totalCzk!: string;
+  @ApiProperty({
+    type: String,
+    nullable: true,
+    description:
+      'Suggested invoice in six-decimal mockUSDC base units. Null for negative-price credits or amounts outside u64.',
+  })
+  amount!: string | null;
+  @ApiProperty() priceSource!: string;
+  @ApiProperty() exchangeRateSource!: string;
+}
+
+export class TreeReportDto implements TreeReport {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() address!: string;
+  @ApiProperty() tree!: string;
+  @ApiProperty() dayStartTs!: string;
+  @ApiProperty() submittedAt!: string;
+  @ApiProperty() reporter!: string;
+  @ApiProperty({
+    type: [Number],
+    description:
+      'Raw readings as supplied; no energy-value or reading-count checks.',
+  })
+  wh!: number[];
+  @ApiProperty() totalWh!: string;
+  @ApiProperty() invoiceIssued!: boolean;
+  @ApiProperty() due!: string;
+  @ApiProperty() paid!: string;
+  @ApiProperty({ type: InvoicePricingDto, nullable: true })
+  pricing!: InvoicePricing | null;
+  @ApiProperty({ type: String, nullable: true }) pricingError!: string | null;
+  @ApiProperty() signature!: string;
+  @ApiProperty({ format: 'date-time' }) updatedAt!: string;
+}
+
+export class TreeReportsDto implements TreeReportsResponse {
+  @ApiProperty({ type: [TreeReportDto] }) reports!: TreeReport[];
+  @ApiProperty({ type: 'integer' }) total!: number;
+}
+
+export class MockReporterDto implements MockReporterInfo {
+  @ApiProperty({ format: 'uuid' }) id!: string;
+  @ApiProperty() tree!: string;
+  @ApiProperty() wallet!: string;
+  @ApiProperty({ type: String, nullable: true }) lastSignature!: string | null;
+  @ApiProperty({ type: String, nullable: true }) lastError!: string | null;
+  @ApiProperty({ type: String, nullable: true }) balanceLamports!:
+    string | null;
+}
+
+export class MockReportResultDto {
+  @ApiProperty({ enum: ['submitted', 'already-submitted', 'waiting', 'busy'] })
+  status!: string;
+  @ApiProperty({ type: String, nullable: true }) signature!: string | null;
+  @ApiProperty({ type: String, nullable: true }) report!: string | null;
+  @ApiProperty({ type: String, nullable: true }) dayStartTs!: string | null;
+  @ApiProperty() message!: string;
+}
+export class ReportSimulationDto {
+  @ApiProperty() tree!: string;
+  @ApiProperty() reporter!: string;
+  @ApiProperty() dayStartTs!: string;
+  @ApiProperty({ format: 'date-time' }) readyAt!: string;
+  @ApiProperty() ready!: boolean;
+  @ApiProperty() alreadyReported!: boolean;
+  @ApiProperty({ type: [Number] }) wh!: number[];
+}
+
+export class MockReporterStatusDto {
+  @ApiProperty({ type: MockReporterDto, nullable: true })
+  reporter!: MockReporterInfo | null;
 }
 
 export class EventDto {
