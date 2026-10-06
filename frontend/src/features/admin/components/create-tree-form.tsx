@@ -1,4 +1,5 @@
-import { useForm } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
+import { useEffect } from 'react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
 import { useAdmin } from '../admin-context';
@@ -6,6 +7,8 @@ import { createTreeFormSchema } from '../schemas';
 import { Card } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { Field } from '../../../components/ui/field';
+import { ErrorMessage } from '../../../components/ui/feedback';
+import { usePrepareMockReporter } from '../hooks/use-mock-reporter';
 export function CreateTreeForm() {
   const { setup, disabled, transaction, wallet } = useAdmin();
   const allowed =
@@ -13,6 +16,8 @@ export function CreateTreeForm() {
   const {
     register,
     handleSubmit,
+    control,
+    setValue,
     formState: { errors },
   } = useForm<
     z.input<typeof createTreeFormSchema>,
@@ -28,6 +33,13 @@ export function CreateTreeForm() {
       reporter: '',
     },
   });
+  const reporter = usePrepareMockReporter(
+    useWatch({ control, name: 'treeId' }),
+    !!allowed,
+  );
+  useEffect(() => {
+    setValue('reporter', reporter.data?.wallet ?? '');
+  }, [reporter.data?.wallet, setValue]);
   return (
     <Card title="Initialize a tree">
       <p className="mb-5 text-sm text-forest/75">
@@ -36,7 +48,9 @@ export function CreateTreeForm() {
       </p>
       <p className="mb-5 text-sm text-forest/75">
         The supplier receives the funded purchase payment. The client pays
-        energy invoices. The reporter signs production reports.
+        energy invoices. A mock reporter wallet is generated and saved by the
+        backend. Initialization funds it with 0.05 devnet SOL for report rent
+        and fees.
       </p>
       {!allowed && (
         <p className="mb-4 text-sm">
@@ -44,9 +58,17 @@ export function CreateTreeForm() {
           list first.
         </p>
       )}
+      <ErrorMessage error={reporter.error} />
+      {reporter.isFetching && (
+        <p className="mb-4 text-sm">Preparing the tree’s reporter wallet…</p>
+      )}
       <form
         onSubmit={handleSubmit((data) =>
-          transaction.mutate({ action: 'initTree', ...data }),
+          transaction.mutate({
+            action: 'initTree',
+            ...data,
+            reporterFundingLamports: '50000000',
+          }),
         )}
       >
         <fieldset
@@ -76,9 +98,14 @@ export function CreateTreeForm() {
           <Field
             label="Device / reporter wallet"
             {...register('reporter')}
+            readOnly
             error={errors.reporter?.message}
           />
-          <Button type="submit" className="justify-self-start">
+          <Button
+            type="submit"
+            disabled={!reporter.data || reporter.isFetching}
+            className="justify-self-start"
+          >
             Initialize tree
           </Button>
         </fieldset>

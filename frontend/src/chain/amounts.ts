@@ -19,5 +19,9 @@ export const nextUtcDay = () =>
   new Date((Math.floor(Date.now() / 86_400_000) + 1) * 86_400_000)
     .toISOString()
     .slice(0, 10);
+export const lastCompletedUtcDay = () =>
+  new Date((Math.floor(Date.now() / 86_400_000) - 1) * 86_400_000)
+    .toISOString()
+    .slice(0, 10);
 export const utcDay = (timestamp: string) =>
   new Date(Number(timestamp) * 1000).toISOString().slice(0, 10);

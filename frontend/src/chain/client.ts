@@ -1,7 +1,7 @@
 import { Connection } from '@solana/web3.js';
 import type { AdminAction } from '../features/admin/schemas';
 import type { ConnectedWallet } from './wallet';
-import { readProtocolState, readReports } from './read';
+import { readProtocolState } from './read';
 import { buildAdminTransaction } from './build';
 import { sendAdminTransaction } from './send';
 export { DEVNET_GENESIS } from './read';
@@ -28,9 +28,6 @@ export class AdminChainClient {
   }
   state(wallet: string) {
     return readProtocolState(this.connection, wallet);
-  }
-  reports(treeAddress: string) {
-    return readReports(this.connection, treeAddress);
   }
   build(wallet: string, action: AdminAction) {
     return buildAdminTransaction(this.connection, wallet, action);

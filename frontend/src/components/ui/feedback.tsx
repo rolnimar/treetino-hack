@@ -11,7 +11,7 @@ export function ErrorMessage({ error }: { error: Error | null | undefined }) {
 export function AddressLink({ address }: { address: string }) {
   return (
     <a
-      href={`https://explorer.solana.com/address/${address}?cluster=devnet`}
+      href={`https://solscan.io/account/${address}?cluster=devnet`}
       target="_blank"
       rel="noreferrer"
       className="block text-xs text-forest/75 underline decoration-forest/25 break-all hover:text-forest"

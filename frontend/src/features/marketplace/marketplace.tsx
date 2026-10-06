@@ -91,13 +91,15 @@ function PublicPortfolio({
             ? transaction.signature
               ? 'Submitted. Waiting for confirmation…'
               : 'Confirm the transaction in your wallet.'
-            : 'Transaction confirmed. Balance refreshed; tree funding updates as indexing catches up.'}
+            : transaction.variables?.action === 'claimRewards'
+              ? 'Yield claimed. Your mockUSDC balance and rewards have been refreshed.'
+              : 'Transaction confirmed. Balance refreshed; tree funding and invoices update as indexing catches up.'}
         </p>
       )}
       {transaction.signature && (
         <a
           className="mb-4 block text-sm underline"
-          href={`https://explorer.solana.com/tx/${transaction.signature}?cluster=devnet`}
+          href={`https://solscan.io/tx/${transaction.signature}?cluster=devnet`}
           target="_blank"
           rel="noreferrer"
         >
@@ -105,12 +107,17 @@ function PublicPortfolio({
         </a>
       )}
       <PublicTrees
+        wallet={wallet?.address}
         connected={!!wallet}
         balance={balance.data?.balance ?? '0'}
         disabled={disabled}
         onBuy={(tree, amount) =>
           transaction.mutate({ action: 'buyShares', tree, amount })
         }
+        onPay={(tree, report, amount) =>
+          transaction.mutate({ action: 'payInvoice', tree, report, amount })
+        }
+        onClaim={(tree) => transaction.mutate({ action: 'claimRewards', tree })}
       />
       <div className="mt-8">
         <PublicFaucet

@@ -23,6 +23,7 @@ import {
   reportAddress,
   paymentAtaAddress,
   paymentMetadataAddress,
+  positionAddress,
 } from '../../src/chain/addresses';
 import {
   parseTokenAmount,
@@ -307,6 +308,7 @@ export function setTokenBalance(
   accounts: Map<string, AccountInfo<Buffer>>,
   owner: PublicKey,
   amount: bigint,
+  address = paymentAtaAddress(owner),
 ) {
   const data = Buffer.alloc(AccountLayout.span);
   AccountLayout.encode(
@@ -325,10 +327,48 @@ export function setTokenBalance(
     },
     data,
   );
-  accounts.set(
-    paymentAtaAddress(owner).toBase58(),
-    account(data, TOKEN_PROGRAM_ID),
+  accounts.set(address.toBase58(), account(data, TOKEN_PROGRAM_ID));
+}
+export async function setInvestorRewards(
+  accounts: Map<string, AccountInfo<Buffer>>,
+  {
+    owner = other.publicKey,
+    paid = 5_000_000n,
+    claimed = 0n,
+    shares = 20_000_000_000n,
+    index = 250_000_000_000_000n,
+    positionIndex = 0n,
+    pendingScaled = 0n,
+    vaultBalance = paid - claimed,
+  } = {},
+) {
+  const original = accounts.get(tree.toBase58())!;
+  const state = coder.accounts.decode<Record<string, unknown>>(
+    'Tree',
+    original.data,
   );
+  original.data = await coder.accounts.encode('Tree', {
+    ...state,
+    target: new BN('20000000000'),
+    raised: new BN('20000000000'),
+    paid: new BN(paid.toString()),
+    claimed: new BN(claimed.toString()),
+    reward_index: new BN(index.toString()),
+  });
+  accounts.set(
+    positionAddress(tree, owner).toBase58(),
+    account(
+      await coder.accounts.encode('Position', {
+        tree,
+        owner,
+        shares: new BN(shares.toString()),
+        index: new BN(positionIndex.toString()),
+        pending_scaled: new BN(pendingScaled.toString()),
+        reserved: Array(128).fill(0),
+      }),
+    ),
+  );
+  setTokenBalance(accounts, tree, vaultBalance, revenueVaultAddress(tree));
 }
 export {
   fixture,

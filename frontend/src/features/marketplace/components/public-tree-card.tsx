@@ -1,11 +1,13 @@
 import { useWalletModal } from '@solana/wallet-adapter-react-ui';
-import type { IndexedTree } from '../../../lib/schemas';
+import type { IndexedTree, IndexedReport } from '../../../lib/schemas';
 import { Card } from '../../../components/ui/card';
 import { Button } from '../../../components/ui/button';
 import { AddressLink } from '../../../components/ui/feedback';
 import { formatTokenAmount } from '../../../chain/amounts';
 import { FundingBar } from './funding-bar';
 import { BuySharesForm } from './buy-shares-form';
+import { TreeInvoices } from './tree-invoices';
+import { TreeRewards } from './tree-rewards';
 
 export function PublicTreeCard({
   tree,
@@ -13,12 +15,18 @@ export function PublicTreeCard({
   balance,
   disabled,
   onBuy,
+  wallet,
+  onPay,
+  onClaim,
 }: {
   tree: IndexedTree;
   connected: boolean;
   balance: string;
   disabled: boolean;
   onBuy: (amount: string) => void;
+  wallet: string | undefined;
+  onPay: (report: IndexedReport, amount: string) => void;
+  onClaim: () => void;
 }) {
   const { setVisible } = useWalletModal();
   return (
@@ -55,6 +63,23 @@ export function PublicTreeCard({
               ? 'Purchased. Awaiting activation.'
               : 'Fully funded. Awaiting purchase.'}
         </p>
+      )}
+      {tree.phase === 'active' && (
+        <TreeRewards
+          tree={tree}
+          wallet={wallet}
+          disabled={disabled}
+          onClaim={onClaim}
+        />
+      )}
+      {tree.phase === 'active' && (
+        <TreeInvoices
+          tree={tree}
+          wallet={wallet}
+          balance={balance}
+          disabled={disabled}
+          onPay={onPay}
+        />
       )}
     </Card>
   );

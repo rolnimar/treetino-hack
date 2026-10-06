@@ -24,11 +24,29 @@ import {
   paymentAtaAddress,
   positionAddress,
   shareAtaAddress,
+  reportAddress,
 } from './addresses';
 
 // The JSON IDL retains Rust names. The coder and account metas use that same IDL.
 const idl = TREETINO_IDL as unknown as Idl;
 const coder = new BorshCoder(idl);
+export function submitReportInstruction(
+  reporter: PublicKey,
+  tree: PublicKey,
+  dayStartTs: string,
+  wh: number[],
+) {
+  return instruction(
+    'submit_report',
+    { day_start_ts: new BN(dayStartTs), wh },
+    {
+      reporter,
+      tree,
+      report: reportAddress(tree, dayStartTs),
+      system_program: SystemProgram.programId,
+    },
+  );
+}
 function instruction(
   name: string,
   args: Record<string, unknown>,
@@ -215,4 +233,50 @@ export function buySharesInstruction(
       system_program: SystemProgram.programId,
     },
   );
+}
+
+export function payInvoiceInstruction(
+  client: PublicKey,
+  tree: TreeInfo,
+  report: PublicKey,
+  amount: string,
+) {
+  const address = new PublicKey(tree.address);
+  return instruction(
+    'pay_invoice',
+    { amount: new BN(amount) },
+    {
+      client,
+      tree: address,
+      report,
+      payment_token_account: paymentAtaAddress(client),
+      revenue_token_account: revenueVaultAddress(address),
+      token_program: TOKEN_PROGRAM_ID,
+    },
+  );
+}
+
+export function claimRewardsInstructions(owner: PublicKey, tree: TreeInfo) {
+  const address = new PublicKey(tree.address);
+  const paymentAccount = paymentAtaAddress(owner);
+  return [
+    createAssociatedTokenAccountIdempotentInstruction(
+      owner,
+      paymentAccount,
+      owner,
+      paymentMintAddress(),
+    ),
+    instruction(
+      'claim_rewards',
+      {},
+      {
+        owner,
+        tree: address,
+        position: positionAddress(address, owner),
+        revenue_token_account: revenueVaultAddress(address),
+        payment_token_account: paymentAccount,
+        token_program: TOKEN_PROGRAM_ID,
+      },
+    ),
+  ];
 }

@@ -1,22 +1,23 @@
 import { Buffer } from 'buffer';
-import { BN, BorshCoder, type Idl } from '@anchor-lang/core';
+import { BorshCoder, type Idl } from '@anchor-lang/core';
 import { Connection, PublicKey, type AccountInfo } from '@solana/web3.js';
 import { TOKEN_PROGRAM_ID, unpackMint } from '@solana/spl-token';
-import bs58 from 'bs58';
 import { TREETINO_IDL } from '@treetino/contracts';
 import {
   PROGRAM_ID,
   UPGRADEABLE_LOADER_ID,
   adminConfigAddress,
   paymentMintAddress,
-  reportAddress,
 } from './addresses';
-import { chainStateSchema, reportsSchema } from '../features/admin/schemas';
+import { chainStateSchema } from '../features/admin/schemas';
 const idl = TREETINO_IDL as unknown as Idl;
 const coder = new BorshCoder(idl);
 import { assertDevnet } from './network';
 export { DEVNET_GENESIS } from './network';
-function decode<T>(name: string, account: AccountInfo<Buffer> | null): T {
+export function decodeProgramAccount<T>(
+  name: string,
+  account: AccountInfo<Buffer> | null,
+): T {
   if (!account) throw new Error(`${name} account does not exist`);
   if (!account.owner.equals(PROGRAM_ID) || account.executable)
     throw new Error(`Invalid ${name} account owner`);
@@ -27,14 +28,6 @@ function decode<T>(name: string, account: AccountInfo<Buffer> | null): T {
       `${name} account does not match the current program layout`,
     );
   }
-}
-interface ReportAccount {
-  tree: PublicKey;
-  day_start_ts: BN;
-  total_wh: BN;
-  invoice_issued: boolean;
-  due: BN;
-  paid: BN;
 }
 export async function readProtocolState(
   connection: Connection,
@@ -74,9 +67,10 @@ export async function readProtocolState(
       ? new PublicKey(data.data.subarray(13, 45)).toBase58()
       : null;
   const admins = adminsAccount
-    ? decode<{ admins: PublicKey[] }>('AdminConfig', adminsAccount).admins.map(
-        (wallet) => wallet.toBase58(),
-      )
+    ? decodeProgramAccount<{ admins: PublicKey[] }>(
+        'AdminConfig',
+        adminsAccount,
+      ).admins.map((wallet) => wallet.toBase58())
     : [];
   if (mintAccount) {
     const mint = unpackMint(
@@ -107,42 +101,4 @@ export async function readProtocolState(
     wallet,
     balanceLamports: balance.toString(),
   });
-}
-export async function readReports(connection: Connection, address: string) {
-  await assertDevnet(connection);
-  const pubkey = new PublicKey(address);
-  const discriminator = idl.accounts!.find(
-    (account) => account.name === 'Report',
-  )!.discriminator;
-  const rows = await connection.getProgramAccounts(PROGRAM_ID, {
-    filters: [
-      {
-        memcmp: {
-          offset: 0,
-          bytes: bs58.encode(Uint8Array.from(discriminator)),
-        },
-      },
-      { memcmp: { offset: 8, bytes: pubkey.toBase58() } },
-    ],
-  });
-  return reportsSchema.parse(
-    rows
-      .map(({ pubkey: address, account }) => {
-        const report = decode<ReportAccount>('Report', account);
-        if (
-          !report.tree.equals(pubkey) ||
-          !reportAddress(pubkey, report.day_start_ts.toString()).equals(address)
-        )
-          throw new Error('Invalid report PDA');
-        return {
-          address: address.toBase58(),
-          dayStartTs: report.day_start_ts.toString(),
-          totalWh: report.total_wh.toString(),
-          invoiceIssued: report.invoice_issued,
-          due: report.due.toString(),
-          paid: report.paid.toString(),
-        };
-      })
-      .sort((a, b) => Number(BigInt(b.dayStartTs) - BigInt(a.dayStartTs))),
-  );
 }

@@ -6,6 +6,7 @@ import { Button } from '../../../components/ui/button';
 import { formatTokenAmount } from '../../../chain/amounts';
 import { ActivationForm } from './activation-form';
 import { ReportsPanel } from './reports-panel';
+import { MockReporterStatus } from './mock-reporter-status';
 export function TreeCard({ tree }: { tree: IndexedTree }) {
   const { wallet, disabled, transaction } = useAdmin();
   const mine = tree.creator === wallet;
@@ -53,6 +54,7 @@ export function TreeCard({ tree }: { tree: IndexedTree }) {
           </dd>
         </div>
       </dl>
+      <MockReporterStatus tree={tree} />
       {!mine && (
         <p className="mb-3 text-sm text-forest/70">
           Lifecycle actions require this tree’s creator wallet.

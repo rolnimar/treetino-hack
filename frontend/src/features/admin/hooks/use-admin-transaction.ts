@@ -33,6 +33,8 @@ export function useAdminTransaction(client: AdminChainClient) {
         queryClient.invalidateQueries({ queryKey: ['trees'] }),
         queryClient.invalidateQueries({ queryKey: ['admin', 'protocol'] }),
         queryClient.invalidateQueries({ queryKey: ['admin', 'reports'] }),
+        queryClient.invalidateQueries({ queryKey: ['tree-reports'] }),
+        queryClient.invalidateQueries({ queryKey: ['mock-reporter-status'] }),
       ]);
     },
     retry: false,

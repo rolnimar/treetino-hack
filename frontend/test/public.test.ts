@@ -10,6 +10,8 @@ import {
   paymentAtaAddress,
   positionAddress,
   shareAtaAddress,
+  reportAddress,
+  revenueVaultAddress,
 } from '../src/chain/addresses';
 import {
   buySharesFormSchema,
@@ -37,6 +39,61 @@ const fundingTree = () => ({
 });
 
 describe('public wallet actions', () => {
+  test('client invoices are built on FE from backend reports with canonical payment accounts', async () => {
+    const { client, accounts, methods, sent } = await fixture();
+    const info = {
+      ...backendTree('active'),
+      client: other.publicKey.toBase58(),
+    };
+    const report = {
+      address: reportAddress(tree, '1791072000').toBase58(),
+      dayStartTs: '1791072000',
+      totalWh: '10000',
+      invoiceIssued: true,
+      due: '1756496',
+      paid: '500000',
+    };
+    setTokenBalance(accounts, other.publicKey, 2_000_000n);
+    const build = (amount = '1256496', treeInfo = info, record = report) =>
+      buildPublicTransaction(client.connection, other.publicKey.toBase58(), {
+        action: 'payInvoice',
+        tree: treeInfo,
+        report: record,
+        amount,
+      });
+    const tx = await build();
+    const ix = tx.instructions[0]!;
+    const decoded = coder.instruction.decode(ix.data)!;
+    expect(decoded.name).toBe('pay_invoice');
+    expect((decoded.data as { amount: BN }).amount.toString()).toBe('1256496');
+    expect(ix.keys[0]!.isSigner).toBe(true);
+    expect(ix.keys[0]!.pubkey.equals(other.publicKey)).toBe(true);
+    expect(ix.keys[3]!.pubkey.equals(paymentAtaAddress(other.publicKey))).toBe(
+      true,
+    );
+    expect(ix.keys[4]!.pubkey.equals(revenueVaultAddress(tree))).toBe(true);
+    await sendWalletTransaction(
+      client.connection,
+      signedWallet(other),
+      tx,
+      () => {},
+    );
+    expect(sent[0]!.verifySignatures()).toBe(true);
+    await expect(build('1256497')).rejects.toThrow('unpaid');
+    await expect(
+      build('1', { ...info, client: creator.publicKey.toBase58() }),
+    ).rejects.toThrow('client');
+    await expect(
+      build('1', info, { ...report, invoiceIssued: false }),
+    ).rejects.toThrow('issued');
+    await expect(
+      build('1', info, { ...report, address: other.publicKey.toBase58() }),
+    ).rejects.toThrow('belong');
+    setTokenBalance(accounts, other.publicKey, 1n);
+    await expect(build()).rejects.toThrow('Insufficient');
+    expect(methods).not.toContain('getProgramAccounts');
+    expect(methods).not.toContain('getAccountInfo');
+  });
   test('missing token accounts show zero and the faucet works for a non-admin wallet', async () => {
     const { client, accounts, methods } = await fixture();
     const address = other.publicKey.toBase58();

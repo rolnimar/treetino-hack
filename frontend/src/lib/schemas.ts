@@ -88,3 +88,87 @@ export const protocolSchema = z.object({
 });
 export type IndexedTree = z.infer<typeof treeSchema>;
 export type AdminSession = z.infer<typeof sessionSchema>;
+export const clientSchema = z.object({ wallet: walletSchema });
+export const clientSessionSchema = z.object({
+  accessToken: z.string().min(1),
+  expiresAt: z.iso.datetime(),
+  client: clientSchema,
+});
+export type ClientSession = z.infer<typeof clientSessionSchema>;
+
+export const mockReportResultSchema = z.object({
+  status: z.enum(['submitted', 'already-submitted', 'waiting', 'busy']),
+  signature: z.string().nullable(),
+  report: addressSchema.nullable(),
+  dayStartTs: z.string().nullable(),
+  message: z.string(),
+});
+export const reportSimulationSchema = z.object({
+  tree: addressSchema,
+  reporter: walletSchema,
+  dayStartTs: z.string().regex(/^[0-9]+$/),
+  readyAt: z.iso.datetime(),
+  ready: z.boolean(),
+  alreadyReported: z.boolean(),
+  wh: z.array(z.number().int()),
+});
+
+export const invoiceReportSchema = z.object({
+  address: addressSchema,
+  dayStartTs: z.string().regex(/^[0-9]+$/),
+  totalWh: u64Schema,
+  invoiceIssued: z.boolean(),
+  due: u64Schema,
+  paid: u64Schema,
+});
+export const invoicePricingSchema = z.object({
+  date: z.iso.date(),
+  method: z.literal('quarter-hour').optional(),
+  intervals: z
+    .array(
+      z.object({
+        startTs: z.string().regex(/^[0-9]+$/),
+        wh: z.number().int(),
+        eurPerMwh: z.string(),
+        czkPerKwh: z.string(),
+        totalCzk: z.string(),
+      }),
+    )
+    .optional(),
+  priceSources: z
+    .array(z.object({ date: z.iso.date(), url: z.url() }))
+    .optional(),
+  eurPerMwh: z.string().optional(),
+  eurCzk: z.string(),
+  usdCzk: z.string(),
+  exchangeRateDate: z.iso.date(),
+  czkPerKwh: z.string().optional(),
+  totalCzk: z.string(),
+  amount: u64Schema.nullable(),
+  priceSource: z.url(),
+  exchangeRateSource: z.url(),
+});
+export const treeReportSchema = invoiceReportSchema.extend({
+  id: z.uuid(),
+  tree: addressSchema,
+  submittedAt: z.string().regex(/^[0-9]+$/),
+  reporter: addressSchema,
+  wh: z.array(z.number().int()),
+  pricing: invoicePricingSchema.nullable(),
+  pricingError: z.string().nullable(),
+  signature: z.string(),
+  updatedAt: z.iso.datetime(),
+});
+export const treeReportsResponseSchema = z.object({
+  reports: z.array(treeReportSchema),
+  total: z.number().int().nonnegative(),
+});
+export const mockReporterSchema = z.object({
+  id: z.uuid(),
+  tree: addressSchema,
+  wallet: walletSchema,
+  lastSignature: z.string().nullable(),
+  lastError: z.string().nullable(),
+  balanceLamports: u64Schema.nullable(),
+});
+export type IndexedReport = z.infer<typeof treeReportSchema>;

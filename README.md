@@ -15,7 +15,8 @@ The backend exposes health, protocol information, tree listings, indexed event h
 It polls confirmed Solana transactions and preserves their data, decoded Anchor events,
 and its cursor in PostgreSQL through Drizzle ORM. Wallet signature login separates
 public access from admin access. The admin frontend builds, signs, and submits
-chain management transactions. Tariff calculation is still to be implemented.
+chain management transactions. Backend mock reporters submit production and calculate
+15-minute Czech spot-price invoice drafts; the creator issues invoices from the admin UI.
 The program's lifecycle, token behavior and reward rules are documented in
 [programs/treetino/README.md](programs/treetino/README.md).
 
@@ -146,7 +147,7 @@ The platform tokenizes physical renewable energy installations and smart trees o
 
 ```sh
 bun run build        # Compiles frontend, backend, and contracts
-bun test             # Runs all 39 unit and integration tests
+bun run test         # Runs backend and frontend tests
 bun run lint         # Lints frontend TypeScript
 bun run format:check # Verifies Prettier code style
 ```
@@ -174,6 +175,17 @@ funding progress updates when the backend indexer observes the purchase. Amounts
 use exact six-decimal integer conversion. Public actions live under
 `frontend/src/features/marketplace`; `frontend/src/chain/public.ts` validates and
 builds them, and the PDA helpers include buyer share ATAs and position accounts.
+
+Active tree cards show **Your investor rewards** and **Claim Yield**. The tree
+catalog still comes from the backend; a confirmed RPC snapshot of the selected
+tree, the connected wallet's position PDA and the revenue vault determines the
+exact claimable amount. Rewards are paid invoice revenue, proportional to shares
+and adjusted for previous claims; they do not return the initial investment.
+Claims require no admin/client JWT. The frontend creates the payment ATA if
+needed, builds `claim_rewards`, and asks the investor wallet to sign. After
+confirmation it refreshes the wallet balance and rewards; rewards also poll every
+10 seconds. The Victron asset calculator remains a simulation and links to these
+on-chain rewards rather than pretending to transfer tokens.
 
 The `admins` table contains only a generated UUID `id` and a unique `wallet` address.
 Add the first admin from `backend/` (using the same `DATABASE_URL` as the backend):
@@ -240,12 +252,14 @@ After signing in, use the admin tabs in this order:
    **Update chain admins** to replace the list (1–10 distinct nonzero wallets).
 2. **Protocol setup**: initialize the mockUSDC payment token and metadata once.
 3. **Create tree**: enter a creator-scoped integer tree ID, funding target in
-   mockUSDC, supplier, client and reporter.
+   mockUSDC, supplier and client. The backend prepares and saves a mock reporter
+   wallet for that creator/tree ID and prefills the read-only reporter field.
+   The initialization transaction also sends it 0.05 devnet SOL.
    Your wallet must be in the chain admin list.
 4. **Trees**: inspect indexed trees, filter by phase, page through results, and
    purchase fully funded trees. Purchase sends the target to the supplier's
    payment ATA, creating that account in the same transaction if necessary.
-5. **Trees**: activate purchased trees with a future UTC first billing day.
+5. **Trees**: activate purchased trees with a UTC first billing day, including a past day for historical reporting.
    The creator can load active tree reports and issue a final invoice, including
    a zero invoice. Invoice amounts cannot be changed after issuance.
 6. **Demo faucet**: mint demo mockUSDC to your wallet's payment ATA.
@@ -257,8 +271,8 @@ Those user/device flows are not admin controls.
 
 PDA seeds, little-endian integer seeds and ATA derivation live in
 `frontend/src/chain/addresses.ts`. Instruction account metas and Borsh arguments
-come from the JSON IDL in `frontend/src/chain/instructions.ts`. Protocol and report
-reads live in `read.ts`, transaction construction and permission checks in `build.ts`,
+come from the JSON IDL in `frontend/src/chain/instructions.ts`. Protocol
+reads live in `read.ts`; trees and reports come from backend endpoints, transaction construction and permission checks in `build.ts`,
 and wallet signing, submission and confirmation polling in `transaction.ts`. `client.ts`
 exposes these operations to the admin hooks. Token inputs use exact six-decimal
 integer conversion, without floating-point arithmetic.
@@ -349,6 +363,145 @@ Devnet ledger resets can remove upstream history. PostgreSQL persistence
 preserves the data already indexed; it is not an RPC archive or a backup.
 See [Solana history RPC](https://solana.com/docs/rpc/http/getsignaturesforaddress)
 and [Anchor log limitations](https://www.anchor-lang.com/docs/features/events).
+
+## Mock production and invoices
+
+New trees use a backend-generated Ed25519 reporter keypair. The admin form calls
+`POST /api/admin/mock-reporters` with `{ "treeId": "1" }` before initialization;
+retrying the same creator/tree ID reuses its wallet. Both that endpoint and
+`GET /api/admin/trees/:address/mock-reporter` require the admin JWT. Responses
+contain the public wallet, SOL balance, latest submitted signature and error,
+never the private key. The status response is `{ reporter: ... }`, with
+`reporter: null` for a tree without a saved backend mock reporter. These devnet mock private keys are stored in PostgreSQL;
+this is a simulated device setup, not custody for real funds. Existing trees
+with another reporter require a new tree ID to use the backend mock.
+
+The creation transaction funds the reporter with **0.05 devnet SOL** from the
+creator. **Fund reporter · 0.05 SOL** on its admin tree card replenishes report
+rent and fees. All funding, initialization, invoice issuance and payment
+transactions are built and signed on the frontend. Only simulated device
+reports are signed and broadcast by the backend.
+
+`MOCK_REPORTER_ENABLED` defaults to `INDEXER_ENABLED`, and
+`MOCK_REPORTER_POLL_SECONDS` defaults to **60**. The worker processes indexed
+active trees whose saved reporter matches the on-chain reporter. It submits one
+completed UTC day per tree per poll, using the program's next-day cursor and a
+deterministic mock solar production profile. An activation with a completed past
+day allows automatic reporting to start immediately. No energy-value or reading-count
+validation is added. Each signed transaction is saved before broadcast; restarts
+rebroadcast the same bytes while its blockhash remains valid. Report PDAs prevent
+duplicate days, and database leases serialize mock workers. Keep the single
+backend replica required by the existing event indexer.
+
+In **Admin workspace → Trees**, select **Report day (UTC)** on a tree card, then
+click **Simulate report on chain**. Any completed UTC day can be selected, including
+days before activation, and days may be reported in any order. Today and future
+days are unavailable because the full UTC day must be complete. Each tree/day
+has a unique report PDA, so existing reports cannot be overwritten or billed twice.
+For a saved backend reporter, the creator triggers `POST /api/admin/trees/:address/simulate-report`
+with `{ "day": "2026-09-30" }`;
+it shares the automatic worker's lease and persisted transaction retries. For an
+existing tree whose reporter is the connected wallet, the button fetches mock
+readings for the selected date from `GET /api/admin/trees/:address/report-simulation?day=2026-09-30`;
+the frontend builds `submit_report` and the reporter signs it in their wallet.
+The button requires an active tree. A historical report does not rewind the
+automatic reporting cursor; automatic reporting continues after the latest
+submitted day or the activation start, whichever is later. Older missing days
+can still be selected manually. Pending transactions are tracked per selected
+day, so retrying September 30 never submits a pending report for another date.
+The manual backend trigger works even if automatic mock reporting is disabled.
+This change requires upgrading the Solana program as well as deploying the
+backend and frontend. It preserves instruction arguments and account layouts;
+existing active trees can backfill after the upgrade without reinitialization.
+
+The indexer projects `ProductionReported`, `InvoiceIssued` and `InvoicePaid`
+accounts with **confirmed** commitment. Reports, raw history and the cursor commit
+atomically. Previously saved report events are projected after upgrading without
+resetting the cursor. `GET /api/trees/:address/reports?limit=20&offset=0` is public,
+reads only PostgreSQL and returns `{ reports, total }`, newest day first
+(`limit` 1–100). It includes raw Wh readings, invoice due/paid amounts and pricing.
+Both admin reports and public active-tree invoices use this endpoint.
+Submitting a past report today is indexed even if the report date predates
+`INDEXER_START_AT`: the indexer start applies to transaction time, not report day.
+**Load reports & invoices** in admin, **View production & invoices** in the
+marketplace, and the signed-in client workspace display graphs of indexed
+15-minute production (Wh) and, once pricing is available, spot prices (CZK/kWh).
+Graphs use the saved on-chain readings and backend historical price breakdown,
+with UTC timestamps and exact values available by hover, touch, or arrow keys.
+Empty reports remain empty; unavailable market prices are retried and not invented.
+
+The home page also includes **Client access → Sign in as client**. Any signing
+wallet can request `POST /api/auth/client/challenge` and submit its signature to
+`POST /api/auth/client/login`. Challenges are bound to their access role and are
+single use. The separate one-hour client JWT grants no admin access; an admin JWT
+also cannot access client routes. `GET /api/client/me` verifies the client session.
+`GET /api/client/trees?limit=20&offset=0` filters by the JWT wallet before pagination;
+`GET /api/client/trees/:address/reports` checks the same assignment before returning
+invoices (404 for unassigned trees). Assignments come from the indexed on-chain
+`client` wallet, so no separate client account table or migration is required.
+Client sessions stay in memory and clear on sign-out, wallet change, disconnect,
+or expiry. Clients see their mockUSDC balance and sign invoice payments on the
+frontend. Public trees, reports, the faucet and share purchases remain available.
+Permissions overlap: the same wallet can hold both admin and client sessions
+while also buying shares or using the public faucet. Client permissions apply
+to the trees assigned to that wallet, including trees where it is also the creator.
+
+Every 60 seconds the billing worker prices reports from their **indexed on-chain
+`wh` array**, not the generated mock data or the aggregate `totalWh` field. Each
+reading is the energy produced in a 15-minute interval starting at
+`dayStartTs + index × 900` seconds UTC. The worker fetches the official
+[OTE day-ahead 15-minute prices](https://www.ote-cr.cz/en/short-term-markets/electricity/day-ahead-market?time_resolution=PT15M)
+and [CNB daily EUR/CZK and USD/CZK rates](https://www.cnb.cz/en/financial-markets/foreign-exchange-market/central-bank-exchange-rate-fixing/central-bank-exchange-rate-fixing/).
+
+OTE publishes prices for Czech local delivery dates. The worker converts each
+market interval to its UTC timestamp using `Europe/Prague`, fetching all delivery
+dates touched by the report. A UTC day normally spans two Czech delivery dates.
+Spring's 92 and autumn's 100 market intervals remain distinct, including both
+occurrences of the repeated autumn hour. Price curves are checked for completeness
+and chronological order; these are price-source checks, not energy-data checks.
+No energy-value or reading-count limits are added.
+
+```text
+interval CZK/kWh = OTE interval EUR/MWh × report-day CNB EUR/CZK ÷ 1,000
+interval CZK = on-chain interval Wh ÷ 1,000 × interval CZK/kWh
+CZK invoice = sum of all interval CZK amounts
+mockUSDC invoice = CZK invoice ÷ report-day CNB USD/CZK
+```
+
+The CNB fixing for the UTC report date is used throughout that invoice, including
+intervals on the next Czech delivery date. CNB supplies the applicable previous
+working-day rate on weekends/holidays. Calculations use integer decimal arithmetic
+and round the mockUSDC total once to six decimals after summing all signed prices.
+Displayed interval totals use six decimals and the daily CZK total uses two;
+conversion uses the full sum before display rounding. Negative-price intervals
+reduce the total, with no clamping. A net credit or an amount exceeding u64 has no
+unsigned mockUSDC draft because the current program cannot represent it.
+
+Market curves and exchange rates are cached by delivery date. Each priced report
+stores its readings, interval UTC starts, EUR/MWh, CZK/kWh, line totals, daily total
+and source links. The UI shows this 15-minute invoice breakdown. Missing source
+prices leave a retryable pricing error and block issuing that draft; they never
+fall back to a daily average or block event indexing. No tax, distribution charge
+or retail markup is included.
+
+Cached old daily averages are replaced with interval curves. Unissued old drafts
+are repriced automatically. Already-issued invoices retain their amounts and
+audit pricing, shown as historical daily-average billing. This correction changes
+JSON pricing data and requires no additional SQL migration.
+
+The backend automatically creates a **priced draft**, not an issued chain invoice.
+In the admin tree's **Load reports & invoices** panel, the creator reviews the
+prefilled mockUSDC amount and signs **Issue invoice**. Issuance is immutable under
+the existing deployed program, so no program upgrade is needed. The public
+**View production & invoices** panel shows reports and outstanding invoices.
+The tree's client wallet can pay the remaining amount using its mockUSDC balance
+and the public faucet; other wallets can view it. Payment uses the connected
+client wallet and updates after indexer confirmation.
+
+Migration `0003_mock_reporters_and_invoices` adds UUID-primary-key reporter,
+signed report job, indexed report and daily spot-price tables. Backend startup
+applies it automatically with the existing migration lock. No new environment
+variable is required; the two mock-worker settings above are optional.
 
 ## Database and migrations
 

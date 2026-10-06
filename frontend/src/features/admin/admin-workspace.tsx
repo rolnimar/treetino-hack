@@ -91,7 +91,7 @@ function Workspace() {
           className="text-sm underline break-all"
           target="_blank"
           rel="noreferrer"
-          href={`https://explorer.solana.com/tx/${transaction.signature}?cluster=devnet`}
+          href={`https://solscan.io/tx/${transaction.signature}?cluster=devnet`}
         >
           View transaction ↗
         </a>

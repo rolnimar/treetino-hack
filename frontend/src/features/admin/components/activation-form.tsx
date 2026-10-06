@@ -3,7 +3,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import type { IndexedTree } from '../../../lib/schemas';
 import { activationFormSchema } from '../schemas';
 import { useAdmin } from '../admin-context';
-import { nextUtcDay } from '../../../chain/amounts';
+import { lastCompletedUtcDay } from '../../../chain/amounts';
 import { Field } from '../../../components/ui/field';
 import { Button } from '../../../components/ui/button';
 export function ActivationForm({ tree }: { tree: IndexedTree }) {
@@ -14,7 +14,7 @@ export function ActivationForm({ tree }: { tree: IndexedTree }) {
     formState: { errors },
   } = useForm({
     resolver: zodResolver(activationFormSchema),
-    defaultValues: { firstDay: nextUtcDay() },
+    defaultValues: { firstDay: lastCompletedUtcDay() },
   });
   return (
     <form
@@ -33,10 +33,14 @@ export function ActivationForm({ tree }: { tree: IndexedTree }) {
         <Field
           label="First billing day (UTC)"
           type="date"
-          min={nextUtcDay()}
+          min="1970-01-01"
           {...register('firstDay')}
           error={errors.firstDay?.message}
         />
+        <p className="text-xs text-forest/65">
+          Choose a past day to start automatic reporting from history, or a
+          future day to schedule it.
+        </p>
         <Button type="submit">Activate tree</Button>
       </fieldset>
     </form>

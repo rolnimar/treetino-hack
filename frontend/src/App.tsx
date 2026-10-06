@@ -15,6 +15,11 @@ const Marketplace = lazy(() =>
     default: module.Marketplace,
   })),
 );
+const ClientAccess = lazy(() =>
+  import('./features/client/client-access').then((module) => ({
+    default: module.ClientAccess,
+  })),
+);
 
 const walletLabels = {
   'no-wallet': 'Connect wallet',
@@ -172,6 +177,9 @@ export function App() {
                 setSelectedSiteId(id);
               }}
             />
+          </Suspense>
+          <Suspense fallback={<p>Loading client access…</p>}>
+            <ClientAccess />
           </Suspense>
           <AdminAccess />
         </>

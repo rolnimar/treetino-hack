@@ -5,6 +5,7 @@ import {
   PublicKey,
   Connection,
   Transaction,
+  SystemInstruction,
   type AccountInfo,
 } from '@solana/web3.js';
 import {
@@ -59,6 +60,48 @@ function decoded(transaction: Transaction) {
 }
 
 describe('frontend chain management', () => {
+  test('report simulation is built and signed on the frontend by the configured reporter using canonical PDAs', async () => {
+    const f = await fixture({ phase: 'Active' });
+    const input = {
+      action: 'simulateReport' as const,
+      tree: { ...backendTree('active'), reporter: other.publicKey.toBase58() },
+      dayStartTs,
+      wh: [0, 4294967295, 123],
+    };
+    const tx = await f.client.build(other.publicKey.toBase58(), input);
+    expect(decoded(tx).name).toBe('submit_report');
+    const args = decoded(tx).data as { day_start_ts: BN; wh: number[] };
+    expect(args.wh).toEqual(input.wh);
+    expect(args.day_start_ts.toString()).toBe(dayStartTs);
+    expect(
+      tx.instructions[0]!.keys[2]!.pubkey.equals(
+        reportAddress(tree, dayStartTs),
+      ),
+    ).toBe(true);
+    expect(tx.instructions[0]!.keys[0]).toMatchObject({
+      isSigner: true,
+      isWritable: true,
+    });
+    await expect(
+      f.client.build(creator.publicKey.toBase58(), input),
+    ).rejects.toThrow('reporter');
+    await expect(
+      f.client.build(other.publicKey.toBase58(), {
+        ...input,
+        tree: { ...input.tree, address: other.publicKey.toBase58() },
+      }),
+    ).rejects.toThrow('seeds');
+    await expect(
+      f.client.build(other.publicKey.toBase58(), {
+        ...input,
+        tree: { ...input.tree, phase: 'purchased' },
+      }),
+    ).rejects.toThrow('Activate');
+    await f.client.execute(signedWallet(other), input, () => {});
+    expect(f.sent[0]!.verifySignatures()).toBe(true);
+    expect(f.sent[0]!.feePayer!.equals(other.publicKey)).toBe(true);
+    expect(decoded(f.sent[0]!).name).toBe('submit_report');
+  });
   test('token amounts remain exact across decimals and u64 boundaries', () => {
     expect(parseTokenAmount('18446744073709.551615')).toBe(
       '18446744073709551615',
@@ -142,6 +185,25 @@ describe('frontend chain management', () => {
     expect(keys).toContain(shareMintAddress(address).toBase58());
     expect(keys).toContain(fundingVaultAddress(address).toBase58());
     expect(keys).toContain(revenueVaultAddress(address).toBase58());
+    const funded = await client.build(creator.publicKey.toBase58(), {
+      ...fresh,
+      reporterFundingLamports: '50000000',
+    });
+    expect(funded.instructions).toHaveLength(2);
+    const transfer = SystemInstruction.decodeTransfer(funded.instructions[1]!);
+    expect(transfer.fromPubkey.equals(creator.publicKey)).toBe(true);
+    expect(transfer.toPubkey.equals(reporter)).toBe(true);
+    expect(transfer.lamports).toBe(50000000n);
+    const topUp = await client.build(creator.publicKey.toBase58(), {
+      action: 'fundReporter',
+      tree: backendTree('active'),
+      amount: '50000000',
+    });
+    expect(
+      SystemInstruction.decodeTransfer(topUp.instructions[0]!).toPubkey.equals(
+        reporter,
+      ),
+    ).toBe(true);
     await expect(
       client.build(other.publicKey.toBase58(), fresh),
     ).rejects.toThrow('chain admin');
@@ -167,7 +229,7 @@ describe('frontend chain management', () => {
       }),
     ).rejects.toThrow('creator');
   });
-  test('activation validates phase and future UTC day; invoices bind the report to its tree', async () => {
+  test('activation accepts past UTC days and validates phase; invoices bind the report to its tree', async () => {
     const { client } = await fixture();
     const tx = await client.build(creator.publicKey.toBase58(), {
       action: 'activateTree',
@@ -180,20 +242,30 @@ describe('frontend chain management', () => {
         decoded(tx).data as { first_day_start_ts: BN }
       ).first_day_start_ts.toNumber() % 86400,
     ).toBe(0);
-    await expect(
-      client.build(creator.publicKey.toBase58(), {
+    const historicalActivation = await client.build(
+      creator.publicKey.toBase58(),
+      {
         action: 'activateTree',
         tree: backendTree(),
         firstDay: '2020-01-01',
-      }),
-    ).rejects.toThrow('future');
+      },
+    );
+    expect(
+      (
+        decoded(historicalActivation).data as { first_day_start_ts: BN }
+      ).first_day_start_ts.toString(),
+    ).toBe('1577836800');
     const active = await fixture({ phase: 'Active' });
-    const reports = await active.client.reports(tree.toBase58());
-    expect(reports[0]).toMatchObject({
-      invoiceIssued: false,
-      totalWh: '96',
-      dayStartTs,
-    });
+    const reports = [
+      {
+        address: reportAddress(tree, dayStartTs).toBase58(),
+        dayStartTs,
+        totalWh: '96',
+        invoiceIssued: false,
+        due: '0',
+        paid: '0',
+      },
+    ];
     const invoice = await active.client.build(creator.publicKey.toBase58(), {
       action: 'issueInvoice',
       tree: backendTree('active'),

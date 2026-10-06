@@ -7,8 +7,15 @@ import {
   treeAddress,
   shareMintAddress,
   fundingVaultAddress,
+  reportAddress,
 } from './addresses';
-import { buySharesInstruction, giveMeMoneyInstruction } from './instructions';
+import {
+  buySharesInstruction,
+  giveMeMoneyInstruction,
+  payInvoiceInstruction,
+  claimRewardsInstructions,
+} from './instructions';
+import { readTreeRewards } from './rewards';
 import {
   publicActionSchema,
   type PublicAction,
@@ -65,8 +72,6 @@ export async function buildPublicTransaction(
     return transaction;
   }
   const tree = input.tree;
-  if (tree.phase !== 'funding' || !tree.canBuy)
-    throw new Error('This tree is no longer accepting funding');
   const key = new PublicKey(tree.address);
   if (
     !treeAddress(new PublicKey(tree.creator), tree.treeId).equals(key) ||
@@ -75,6 +80,37 @@ export async function buildPublicTransaction(
     tree.paymentMint !== paymentMintAddress().toBase58()
   )
     throw new Error('Backend tree addresses do not match the program seeds');
+  if (input.action === 'claimRewards') {
+    const rewards = await readTreeRewards(connection, address, tree);
+    if (!rewards.active) throw new Error('Rewards require an active tree');
+    if (rewards.claimable === '0')
+      throw new Error('No rewards available to claim');
+    if (!rewards.canClaim)
+      throw new Error('Insufficient funds in the tree revenue vault');
+    transaction.add(...claimRewardsInstructions(owner, tree));
+    return transaction;
+  }
+  if (input.action === 'payInvoice') {
+    if (tree.client !== address)
+      throw new Error('Only this tree’s client can pay its invoice');
+    if (tree.phase !== 'active' || !input.report.invoiceIssued)
+      throw new Error('Invoice has not been issued for an active tree');
+    const report = new PublicKey(input.report.address);
+    if (!reportAddress(key, input.report.dayStartTs).equals(report))
+      throw new Error('Report does not belong to this tree');
+    if (
+      BigInt(input.report.paid) > BigInt(input.report.due) ||
+      BigInt(input.amount) >
+        BigInt(input.report.due) - BigInt(input.report.paid)
+    )
+      throw new Error('Amount exceeds the unpaid invoice');
+    if (BigInt(input.amount) > BigInt(state.balance))
+      throw new Error('Insufficient mockUSDC balance');
+    transaction.add(payInvoiceInstruction(owner, tree, report, input.amount));
+    return transaction;
+  }
+  if (tree.phase !== 'funding' || !tree.canBuy)
+    throw new Error('This tree is no longer accepting funding');
   const target = BigInt(tree.target);
   const raised = BigInt(tree.raised);
   if (

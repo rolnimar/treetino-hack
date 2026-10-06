@@ -2,7 +2,11 @@ import { useState } from 'react';
 import { Button } from '../../../components/ui/button';
 import { SelectField } from '../../../components/ui/field';
 import { ErrorMessage } from '../../../components/ui/feedback';
-import { phaseSchema, type IndexedTree } from '../../../lib/schemas';
+import {
+  phaseSchema,
+  type IndexedTree,
+  type IndexedReport,
+} from '../../../lib/schemas';
 import { TREE_PAGE_SIZE, useTrees } from '../../trees/use-trees';
 import { PublicTreeCard } from './public-tree-card';
 
@@ -11,11 +15,17 @@ export function PublicTrees({
   balance,
   disabled,
   onBuy,
+  wallet,
+  onPay,
+  onClaim,
 }: {
   connected: boolean;
   balance: string;
   disabled: boolean;
   onBuy: (tree: IndexedTree, amount: string) => void;
+  wallet: string | undefined;
+  onPay: (tree: IndexedTree, report: IndexedReport, amount: string) => void;
+  onClaim: (tree: IndexedTree) => void;
 }) {
   const [phase, setPhase] = useState<IndexedTree['phase'] | 'all'>('all');
   const [page, setPage] = useState(0);
@@ -65,6 +75,9 @@ export function PublicTrees({
                 balance={balance}
                 disabled={disabled || query.isPlaceholderData}
                 onBuy={(amount) => onBuy(tree, amount)}
+                wallet={wallet}
+                onPay={(report, amount) => onPay(tree, report, amount)}
+                onClaim={() => onClaim(tree)}
               />
             ))}
           </div>

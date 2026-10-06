@@ -1,25 +1,28 @@
 import { useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { z } from 'zod';
-import type { IndexedTree } from '../../../lib/schemas';
-import { invoiceFormSchema, type ProductionReport } from '../schemas';
+import type { IndexedTree, IndexedReport } from '../../../lib/schemas';
+import { invoiceFormSchema } from '../schemas';
 import { useAdmin } from '../admin-context';
 import { Button } from '../../../components/ui/button';
 import { Field, SelectField } from '../../../components/ui/field';
 import { ErrorMessage } from '../../../components/ui/feedback';
 import { formatTokenAmount, utcDay } from '../../../chain/amounts';
+import { REPORT_PAGE_SIZE, useTreeReports } from '../../trees/use-tree-reports';
+import { ReportDetails } from '../../trees/components/report-details';
 export function ReportsPanel({ tree }: { tree: IndexedTree }) {
   const [open, setOpen] = useState(false);
-  const { client } = useAdmin();
-  const query = useQuery({
-    queryKey: ['admin', 'reports', tree.address],
-    queryFn: () => client.reports(tree.address),
-    enabled: open,
-  });
+  const [page, setPage] = useState(0);
+  const query = useTreeReports(tree.address, page, open);
   const uninvoiced =
-    query.data?.filter((report) => !report.invoiceIssued) ?? [];
+    query.data?.reports.filter(
+      (report) =>
+        !report.invoiceIssued &&
+        report.pricing?.method === 'quarter-hour' &&
+        report.pricing?.amount !== null &&
+        report.pricing,
+    ) ?? [];
   return (
     <div className="space-y-4 border-t border-forest/15 pt-4">
       <Button
@@ -36,16 +39,35 @@ export function ReportsPanel({ tree }: { tree: IndexedTree }) {
       {query.isFetching && <p className="text-sm">Loading reports…</p>}
       {query.data && (
         <>
-          <p className="text-sm">{query.data.length} production reports</p>
-          <div className="max-h-60 space-y-2 overflow-auto text-sm">
-            {query.data.map((report) => (
-              <p key={report.address}>
-                {utcDay(report.dayStartTs)} · {report.totalWh} Wh ·{' '}
-                {report.invoiceIssued
-                  ? `${formatTokenAmount(report.due)} due / ${formatTokenAmount(report.paid)} paid`
-                  : 'Not invoiced'}
-              </p>
+          <p className="text-sm">{query.data.total} production reports</p>
+          <div className="space-y-4 text-sm">
+            {query.data.reports.map((report) => (
+              <div
+                key={report.address}
+                className="rounded-md border border-forest/15 p-3"
+              >
+                <ReportDetails report={report} />
+              </div>
             ))}
+          </div>
+          <div className="flex gap-3">
+            <Button
+              variant="secondary"
+              disabled={page === 0 || query.isFetching}
+              onClick={() => setPage(page - 1)}
+            >
+              Previous reports
+            </Button>
+            <Button
+              variant="secondary"
+              disabled={
+                query.isFetching ||
+                (page + 1) * REPORT_PAGE_SIZE >= query.data.total
+              }
+              onClick={() => setPage(page + 1)}
+            >
+              Next reports
+            </Button>
           </div>
           {uninvoiced.length > 0 && (
             <InvoiceForm
@@ -64,12 +86,13 @@ function InvoiceForm({
   reports,
 }: {
   tree: IndexedTree;
-  reports: ProductionReport[];
+  reports: IndexedReport[];
 }) {
   const { disabled, wallet, transaction } = useAdmin();
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<
     z.input<typeof invoiceFormSchema>,
@@ -77,7 +100,12 @@ function InvoiceForm({
     z.output<typeof invoiceFormSchema>
   >({
     resolver: zodResolver(invoiceFormSchema),
-    defaultValues: { report: reports[0]?.address ?? '', amount: '' },
+    defaultValues: {
+      report: reports[0]?.address ?? '',
+      amount: reports[0]?.pricing?.amount
+        ? formatTokenAmount(reports[0].pricing.amount)
+        : '0',
+    },
   });
   return (
     <form
@@ -99,6 +127,18 @@ function InvoiceForm({
         <SelectField
           label="Report"
           {...register('report')}
+          onChange={(event) => {
+            setValue('report', event.target.value);
+            const selected = reports.find(
+              (report) => report.address === event.target.value,
+            );
+            setValue(
+              'amount',
+              selected?.pricing?.amount
+                ? formatTokenAmount(selected.pricing.amount)
+                : '0',
+            );
+          }}
           error={errors.report?.message}
         >
           {reports.map((report) => (
@@ -113,7 +153,9 @@ function InvoiceForm({
           error={errors.amount?.message}
         />
         <p className="text-xs text-forest/70">
-          The final amount cannot be changed once issued. Zero is allowed.
+          Prefilled from the backend’s 15-minute spot-price calculation. Review
+          before signing; the final amount cannot be changed once issued. Zero
+          is allowed.
         </p>
         <Button type="submit">Issue invoice</Button>
       </fieldset>

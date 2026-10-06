@@ -1,4 +1,9 @@
-import { PublicKey, Transaction, type Connection } from '@solana/web3.js';
+import {
+  PublicKey,
+  SystemProgram,
+  Transaction,
+  type Connection,
+} from '@solana/web3.js';
 import { actionSchema, type AdminAction } from '../features/admin/schemas';
 import {
   treeAddress,
@@ -16,6 +21,7 @@ import {
   activateTreeInstruction,
   issueInvoiceInstruction,
   giveMeMoneyInstruction,
+  submitReportInstruction,
 } from './instructions';
 /** Uses backend tree records; no tree accounts are fetched from RPC. */
 export async function buildAdminTransaction(
@@ -28,6 +34,24 @@ export async function buildAdminTransaction(
   const signer = new PublicKey(wallet);
   const transaction = new Transaction();
   switch (input.action) {
+    case 'simulateReport': {
+      const info = input.tree;
+      const tree = new PublicKey(info.address);
+      if (info.reporter !== wallet)
+        throw new Error(
+          'Only the configured reporter wallet can submit reports',
+        );
+      if (info.phase !== 'active')
+        throw new Error('Activate the tree before reporting');
+      if (!treeAddress(new PublicKey(info.creator), info.treeId).equals(tree))
+        throw new Error(
+          'Backend tree address does not match the program seeds',
+        );
+      transaction.add(
+        submitReportInstruction(signer, tree, input.dayStartTs, input.wh),
+      );
+      break;
+    }
     case 'initAdmins':
     case 'setAdmins': {
       if (state.upgradeAuthority !== wallet)
@@ -47,6 +71,23 @@ export async function buildAdminTransaction(
           new PublicKey(state.programData),
           admins,
         ),
+      );
+      break;
+    }
+    case 'fundReporter': {
+      if (
+        input.tree.creator !== wallet ||
+        !treeAddress(signer, input.tree.treeId).equals(
+          new PublicKey(input.tree.address),
+        )
+      )
+        throw new Error('Only this tree’s creator can fund its reporter');
+      transaction.add(
+        SystemProgram.transfer({
+          fromPubkey: signer,
+          toPubkey: new PublicKey(input.tree.reporter),
+          lamports: BigInt(input.amount),
+        }),
       );
       break;
     }
@@ -78,6 +119,17 @@ export async function buildAdminTransaction(
           reporter,
         }),
       );
+      if (
+        input.reporterFundingLamports &&
+        BigInt(input.reporterFundingLamports) > 0n
+      )
+        transaction.add(
+          SystemProgram.transfer({
+            fromPubkey: signer,
+            toPubkey: reporter,
+            lamports: BigInt(input.reporterFundingLamports),
+          }),
+        );
       break;
     }
     case 'giveMeMoney': {

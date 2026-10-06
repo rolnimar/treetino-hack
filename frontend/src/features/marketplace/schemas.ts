@@ -3,6 +3,7 @@ import {
   tokenAmountInput,
   positiveU64Schema,
   treeSchema,
+  invoiceReportSchema,
 } from '../../lib/schemas';
 
 export const spendLimit = (balance: string, remaining: string) => {
@@ -24,11 +25,18 @@ export const buySharesFormSchema = (balance: string, remaining: string) =>
   });
 export const faucetFormSchema = z.object({ amount: tokenAmountInput() });
 export const publicActionSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('claimRewards'), tree: treeSchema }),
   z.object({ action: z.literal('giveMeMoney'), amount: positiveU64Schema }),
   z.object({
     action: z.literal('buyShares'),
     amount: positiveU64Schema,
     tree: treeSchema,
+  }),
+  z.object({
+    action: z.literal('payInvoice'),
+    amount: positiveU64Schema,
+    tree: treeSchema,
+    report: invoiceReportSchema,
   }),
 ]);
 export type PublicAction = z.infer<typeof publicActionSchema>;

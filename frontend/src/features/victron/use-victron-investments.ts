@@ -86,35 +86,8 @@ export function useVictronInvestments(walletAddress: string | undefined) {
     [storageKey],
   );
 
-  const claimYield = useCallback(
-    (siteId: number, accrued: number) => {
-      const current = safeParse(localStorage.getItem(storageKey));
-      const existing = current[siteId];
-      if (!existing || accrued <= 0) return 0;
-
-      const updated: InvestmentsMap = {
-        ...current,
-        [siteId]: {
-          ...existing,
-          lastClaimedAt: Date.now(),
-          totalClaimedUsdc: existing.totalClaimedUsdc + accrued,
-        },
-      };
-
-      try {
-        localStorage.setItem(storageKey, JSON.stringify(updated));
-      } catch {
-        // Ignore storage errors
-      }
-      notify();
-      return accrued;
-    },
-    [storageKey],
-  );
-
   return {
     investments,
     invest,
-    claimYield,
   };
 }

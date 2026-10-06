@@ -6,6 +6,7 @@ import {
   positiveU64Schema,
   treeSchema,
   tokenAmountInput,
+  invoiceReportSchema,
 } from '../../lib/schemas';
 const walletsSchema = z
   .array(walletSchema)
@@ -15,12 +16,17 @@ const walletsSchema = z
     (wallets) => new Set(wallets).size === wallets.length,
     'Remove duplicate wallets',
   );
-export const futureDaySchema = z.iso
+export const billingDaySchema = z.iso
   .date()
   .refine(
-    (value) => Date.parse(value + 'T00:00:00Z') > Date.now(),
-    'Choose a future UTC billing day',
+    (value) => value >= '1970-01-01',
+    'Choose a UTC day on or after January 1, 1970',
   );
+export const reportDaySchema = billingDaySchema.refine(
+  (value) => Date.parse(value + 'T00:00:00Z') + 86_400_000 <= Date.now(),
+  'Choose a completed UTC day',
+);
+export const simulateReportFormSchema = z.object({ day: reportDaySchema });
 export const adminsFormSchema = z.object({
   wallets: z
     .string()
@@ -35,20 +41,13 @@ export const createTreeFormSchema = z.object({
   client: walletSchema,
   reporter: walletSchema,
 });
-export const activationFormSchema = z.object({ firstDay: futureDaySchema });
+export const activationFormSchema = z.object({ firstDay: billingDaySchema });
 export const invoiceFormSchema = z.object({
   report: addressSchema,
   amount: tokenAmountInput(true),
 });
 export const faucetFormSchema = z.object({ amount: tokenAmountInput() });
-export const reportSchema = z.object({
-  address: addressSchema,
-  dayStartTs: z.string().regex(/^[0-9]+$/),
-  totalWh: u64Schema,
-  invoiceIssued: z.boolean(),
-  due: u64Schema,
-  paid: u64Schema,
-});
+export const reportSchema = invoiceReportSchema;
 export const reportsSchema = z.array(reportSchema);
 export const chainStateSchema = z.object({
   network: z.literal('devnet'),
@@ -76,12 +75,13 @@ export const actionSchema = z.discriminatedUnion('action', [
     supplier: walletSchema,
     client: walletSchema,
     reporter: walletSchema,
+    reporterFundingLamports: u64Schema.optional(),
   }),
   z.object({ action: z.literal('purchaseTree'), tree: treeSchema }),
   z.object({
     action: z.literal('activateTree'),
     tree: treeSchema,
-    firstDay: futureDaySchema,
+    firstDay: billingDaySchema,
   }),
   z.object({
     action: z.literal('issueInvoice'),
@@ -90,6 +90,17 @@ export const actionSchema = z.discriminatedUnion('action', [
     amount: u64Schema,
   }),
   z.object({ action: z.literal('giveMeMoney'), amount: positiveU64Schema }),
+  z.object({
+    action: z.literal('simulateReport'),
+    tree: treeSchema,
+    dayStartTs: z.string().regex(/^[0-9]+$/),
+    wh: z.array(z.number().int()),
+  }),
+  z.object({
+    action: z.literal('fundReporter'),
+    tree: treeSchema,
+    amount: positiveU64Schema,
+  }),
 ]);
 export type AdminAction = z.infer<typeof actionSchema>;
 export type ChainState = z.infer<typeof chainStateSchema>;

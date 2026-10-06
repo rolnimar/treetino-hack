@@ -16,11 +16,9 @@ export function VictronMoneyFlow({
 }: VictronMoneyFlowProps) {
   const [investAmount, setInvestAmount] = useState<number>(500);
   const [justInvested, setJustInvested] = useState<boolean>(false);
-  const [justClaimed, setJustClaimed] = useState<string | null>(null);
   const [elapsedTicks, setElapsedTicks] = useState<number>(0);
 
-  const { investments, invest, claimYield } =
-    useVictronInvestments(walletAddress);
+  const { investments, invest } = useVictronInvestments(walletAddress);
   const currentHolding = investments[demo.siteId];
 
   // Ticking effect for live streaming yield
@@ -56,13 +54,6 @@ export function VictronMoneyFlow({
     invest(demo.siteId, investAmount);
     setJustInvested(true);
     setTimeout(() => setJustInvested(false), 3500);
-  };
-
-  const handleClaim = () => {
-    if (accruedUsdc <= 0) return;
-    const claimed = claimYield(demo.siteId, accruedUsdc);
-    setJustClaimed(`Claimed +$${claimed.toFixed(4)} mockUSDC`);
-    setTimeout(() => setJustClaimed(null), 3500);
   };
 
   return (
@@ -223,7 +214,7 @@ export function VictronMoneyFlow({
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <div className="font-mono text-[10px] uppercase tracking-wider text-emerald-800 font-bold">
-                  Active Asset Holding
+                  Demo Asset Holding
                 </div>
                 <div className="mt-1 text-2xl font-black text-emerald-950">
                   ${currentHolding.amountUsdc.toLocaleString()} mockUSDC (
@@ -239,27 +230,20 @@ export function VictronMoneyFlow({
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <span className="block font-mono text-[10px] text-emerald-700 font-semibold">
-                    Accrued Dividend
+                    Simulated Dividend
                   </span>
                   <span className="font-mono text-xl font-extrabold text-emerald-800">
                     +${accruedUsdc.toFixed(4)} mockUSDC
                   </span>
                 </div>
-                <button
-                  type="button"
-                  onClick={handleClaim}
+                <a
+                  href="#trees"
                   className="rounded-xl bg-forest px-4 py-2.5 font-bold text-white hover:bg-[#23573e] transition-colors shadow-sm text-xs"
                 >
-                  Claim Yield
-                </button>
+                  View on-chain rewards
+                </a>
               </div>
             </div>
-
-            {justClaimed && (
-              <div className="mt-2 text-xs font-bold text-emerald-800">
-                {justClaimed}
-              </div>
-            )}
           </div>
         )}
 
