@@ -5,6 +5,7 @@ import {
   PowerPlugIcon,
   GridIcon,
   FroniusIcon,
+  SunIcon,
 } from '../victron-icons';
 import {
   InstallationHeader,
@@ -37,8 +38,16 @@ export function EssLayout({ demo }: EssLayoutProps) {
   ).toFixed(2);
 
   const isGridExporting = (currentPower.gridWatts ?? 0) <= 0;
+  const isBatteryDischarging = true; // -348 W in official demo
 
-  const essentialTrend = [280, 290, 310, 305, currentPower.consumptionWatts];
+  const gridTrend = [-40, -35, -20, -10, currentPower.gridWatts || -27];
+  const essentialTrend = [
+    280,
+    290,
+    310,
+    305,
+    currentPower.consumptionWatts || 309,
+  ];
   const batteryTrend = [45, 38, 32, 28, currentPower.batterySocPercent];
   const solarTrend = demo.hourlyData.map((d) => d.solarKwh);
 
@@ -54,24 +63,24 @@ export function EssLayout({ demo }: EssLayoutProps) {
       {/* 2. REUSABLE FLOW SUMMARY BANNER */}
       <FlowSummaryBanner
         generation={{
-          label: 'Grid-Tied Solar Generation',
-          value: `${dailyTotals.solarYieldKwh.toFixed(2)} kWh Today`,
-          subtext: `Live PV yield: ${currentPower.solarYieldWatts.toFixed(0)} W`,
+          label: 'Grid Arbitrage Spread',
+          value: '€0.28 / kWh',
+          subtext: 'Buy off-peak night → sell during peak morning demand',
         }}
         consumption={{
-          label: 'Facility Consumption',
-          value: `${currentPower.consumptionWatts.toFixed(0)} W`,
-          subtext: `Today: ${dailyTotals.consumptionKwh.toFixed(2)} kWh metered`,
+          label: 'Active Battery Export',
+          value: '-348 W Discharging',
+          subtext: 'Powering critical facility loads & day-ahead feed-in',
         }}
         revenueOrSavings={{
-          label: 'Peak Arbitrage & Balancing',
-          value: `+$${dailyDisplacedSavings} / day`,
-          subtext: 'Spot spread (€0.28/kWh) + frequency reserve',
+          label: 'Gross Daily Revenue',
+          value: `+€${dailyDisplacedSavings} / day`,
+          subtext: 'Combined solar self-consumption + grid arbitrage',
         }}
         investorYield={{
           apyPercent: financials.projectedApy,
           annualDistribution: annualPoolDistribution,
-          subtext: 'Distributed continuously to BESS tokenholders on Solana',
+          subtext: 'Automated on-chain distribution to Solana investors',
         }}
       />
 
@@ -80,30 +89,30 @@ export function EssLayout({ demo }: EssLayoutProps) {
         assetName="Commercial ESS"
         stakePercent="0.20%"
         hourlyRate="+$0.024 / hr"
-        baseYieldUsdc={0.038}
+        baseYieldUsdc={0.0416}
         incrementPerSecond={0.0012}
       />
 
       {/* 4. SCHEMATIC CANVAS + UNCOUPLED TELEMETRY SIDEPANEL */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
-        {/* LEFT 9 COLS: ELECTRICAL CIRCUIT SCHEMATIC CANVAS */}
+        {/* LEFT 9 COLS: ELECTRICAL CIRCUIT SCHEMATIC CANVAS (Exact Replica of media_1791148405367.png) */}
         <div className="xl:col-span-9 overflow-x-auto rounded-2xl border border-forest/15 bg-[#fbfaf7] p-3 sm:p-5 flex items-center">
           <svg
-            viewBox="0 0 770 420"
-            className="w-full h-auto min-w-[680px] select-none"
+            viewBox="0 0 770 560"
+            className="w-full h-auto min-w-[720px] select-none"
           >
-            {/* CONDUIT PIPES */}
-            {/* Pipe 1: Grid Meter (240, 110) -> MultiPlus Hub (320, 110) */}
+            {/* CONDUIT PIPES LAYER */}
+            {/* 1. AC-In Conduit: Grid drop from (130, 165) down to (130, 275) */}
             <ConduitLine
-              x1={240}
-              y1={110}
-              x2={320}
-              y2={110}
+              x1={130}
+              y1={165}
+              x2={130}
+              y2={275}
               flow={
                 flowMode !== 'funds'
                   ? isGridExporting
-                    ? 'emerald'
-                    : 'reverse-rose'
+                    ? 'reverse-emerald'
+                    : 'rose'
                   : null
               }
               fundsFlow={
@@ -111,134 +120,230 @@ export function EssLayout({ demo }: EssLayoutProps) {
               }
             />
 
-            {/* Pipe 2: MultiPlus Hub (490, 110) -> AC Loads (560, 110) */}
+            {/* 2. AC-In Conduit: PV Inverter 1 right (235, 275) through junction (130, 275) to MultiPlus left (280, 275) */}
+            <ConduitLine
+              x1={235}
+              y1={275}
+              x2={280}
+              y2={275}
+              flow={flowMode !== 'funds' ? 'amber' : null}
+            />
+
+            {/* 3. AC Loads tap: AC Loads bottom (385, 165) down to MultiPlus AC-In top (385, 200) */}
+            <ConduitLine x1={385} y1={165} x2={385} y2={200} flow={null} />
+
+            {/* 4. AC-Out Conduit: MultiPlus right (490, 275) to PV Inverter 2 left (535, 275) */}
             <ConduitLine
               x1={490}
-              y1={110}
-              x2={560}
-              y2={110}
+              y1={275}
+              x2={535}
+              y2={275}
+              flow={flowMode !== 'funds' ? 'sky' : null}
+            />
+
+            {/* 5. AC-Out Branch up to Essential Loads: from junction (512, 275) up to (512, 165) and right to (535, 165) */}
+            <path
+              d="M 512 275 V 165 H 535"
+              className="vrm-conduit-outer"
+              fill="none"
+            />
+            <path
+              d="M 512 275 V 165 H 535"
+              className="vrm-conduit-inner"
+              fill="none"
+            />
+            {flowMode !== 'funds' && (
+              <path
+                d="M 512 275 V 165 H 535"
+                className="vrm-flow-sky"
+                fill="none"
+              />
+            )}
+            {(flowMode === 'funds' || flowMode === 'both') && (
+              <path
+                d="M 535 165 H 512 V 275"
+                className="vrm-flow-reverse-gold"
+                fill="none"
+              />
+            )}
+
+            {/* 6. DC Conduit: MultiPlus bottom (385, 350) down to Battery top (385, 390) */}
+            <ConduitLine
+              x1={385}
+              y1={350}
+              x2={385}
+              y2={390}
               flow={
-                flowMode !== 'funds' && currentPower.consumptionWatts > 0
-                  ? 'rose'
+                flowMode !== 'funds'
+                  ? isBatteryDischarging
+                    ? 'reverse-emerald'
+                    : 'emerald'
                   : null
               }
-              fundsFlow={
-                flowMode === 'funds' || flowMode === 'both'
-                  ? 'reverse-gold'
-                  : null
-              }
-            />
-
-            {/* Pipe 3: MultiPlus Hub bottom (405, 190) -> DC Bus (405, 310) */}
-            <ConduitLine
-              x1={405}
-              y1={190}
-              x2={405}
-              y2={310}
-              flow={flowMode !== 'funds' ? 'reverse-emerald' : null}
-            />
-
-            {/* Pipe 4: Battery Storage (240, 310) -> DC Bus (405, 310) */}
-            <ConduitLine
-              x1={240}
-              y1={310}
-              x2={405}
-              y2={310}
-              flow={flowMode !== 'funds' ? 'reverse-emerald' : null}
               fundsFlow={
                 flowMode === 'funds' || flowMode === 'both' ? 'gold' : null
               }
             />
 
-            {/* Pipe 5: DC Bus (405, 310) -> PV Inverter (560, 310) */}
+            {/* 7. DC Conduit: Battery right (490, 462) across to PV Charger left (535, 462) */}
             <ConduitLine
-              x1={405}
-              y1={310}
-              x2={560}
-              y2={310}
-              flow={
-                flowMode !== 'funds' && currentPower.solarYieldWatts > 0
-                  ? 'amber'
-                  : null
-              }
-              fundsFlow={
-                flowMode === 'funds' || flowMode === 'both' ? 'gold' : null
-              }
+              x1={490}
+              y1={462}
+              x2={535}
+              y2={462}
+              flow={flowMode !== 'funds' ? 'amber' : null}
             />
 
-            {/* Central DC Bus T-Junction Node */}
+            {/* Junction Dots */}
             <circle
-              cx="405"
-              cy="310"
-              r="8"
+              cx="130"
+              cy="275"
+              r="6"
               fill="#059669"
               stroke="#ffffff"
-              strokeWidth="3"
+              strokeWidth="2.5"
+            />
+            <circle
+              cx="512"
+              cy="275"
+              r="6"
+              fill="#0284c7"
+              stroke="#ffffff"
+              strokeWidth="2.5"
             />
 
-            {/* HARDWARE NODES */}
-            {/* Card 1.1: GRID METER (Carlo Gavazzi ET340) */}
+            {/* HARDWARE NODES LAYER (8 Authentic Victron Components) */}
+
+            {/* ROW 1: GRID, AC LOADS, ESSENTIAL LOADS */}
+            {/* Card 1.1: GRID CONNECTION (Feed-in Export / Import) */}
             <SchematicCard
-              x={30}
-              y={30}
+              x={25}
+              y={20}
+              width={210}
+              height={145}
               accent="forest"
-              icon={<GridIcon className="h-4 w-4 text-forest/70" />}
+              icon={<GridIcon className="h-4 w-4 text-forest/80" />}
               title="Grid Meter"
-              badge="Carlo Gavazzi"
+              badge={isGridExporting ? 'Feed-in Export' : 'Import Active'}
               primaryValue={
-                isGridExporting
-                  ? `${Math.abs(currentPower.gridWatts || 27)} W Export`
-                  : `${currentPower.gridWatts} W Import`
+                currentPower.gridWatts !== 0
+                  ? `${Math.abs(currentPower.gridWatts)} W ${isGridExporting ? 'Export' : 'Import'}`
+                  : '46 W Export'
               }
               subtext="Dynamic Bi-directional Feed"
+              sparklineData={gridTrend}
               footerLabel="Spot Arbitrage:"
-              footerValue="+€0.28 / kWh spread"
+              footerValue="+€0.28 / kWh"
             />
 
-            {/* Card 1.2: MULTIPLUS-II ESS INVERTER HUB */}
-            <foreignObject x={320} y={30} width={170} height={160}>
-              <div className="h-full w-full rounded-2xl border-2 border-forest/20 bg-cream/90 shadow-md flex flex-col justify-between overflow-hidden text-center select-none">
-                <div className="bg-forest py-2 text-white">
-                  <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 font-mono text-xs font-black">
-                    ESS
-                  </div>
-                  <div className="mt-1 font-mono text-[10px] font-bold tracking-tight text-white/90">
-                    MultiPlus-II 48V
-                  </div>
-                </div>
-                <div className="p-2 flex flex-col items-center justify-center">
-                  <span className="rounded-full bg-forest/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-forest">
-                    Mode: {demo.systemInfo.systemState}
-                  </span>
-                  <div className="mt-1 font-mono text-xs font-extrabold text-emerald-800">
-                    {financials.projectedApy}% APY Yield
-                  </div>
-                </div>
-                <div className="bg-white/80 py-1 font-mono text-[9px] text-forest/60 border-t border-forest/10">
-                  Grid Balancing Hub
-                </div>
-              </div>
-            </foreignObject>
-
-            {/* Card 1.3: AC LOADS (Critical Loads) */}
+            {/* Card 1.2: AC LOADS (Non-critical) */}
             <SchematicCard
-              x={560}
-              y={30}
+              x={280}
+              y={20}
+              width={210}
+              height={145}
+              accent="emerald"
+              icon={<PowerPlugIcon className="h-4 w-4 text-emerald-700" />}
+              title="AC Loads"
+              badge="Non-critical"
+              primaryValue="0 W"
+              subtext="Grid-parallel circuits idle"
+              sparklineData={[0, 0, 0, 0, 0]}
+              footerLabel="Billed Tariff:"
+              footerValue="$0.00 / hr"
+            />
+
+            {/* Card 1.3: ESSENTIAL LOADS (Protected UPS Sub-Panel) */}
+            <SchematicCard
+              x={535}
+              y={20}
+              width={210}
+              height={145}
               accent="rose"
               icon={<PowerPlugIcon className="h-4 w-4 text-rose-700" />}
               title="Critical Loads"
               badge="AC Out"
-              primaryValue={`${currentPower.consumptionWatts.toFixed(0)} W`}
+              primaryValue={`${(currentPower.consumptionWatts || 483).toFixed(0)} W`}
               subtext={`Today: ${dailyTotals.consumptionKwh.toFixed(2)} kWh`}
-              sparklineData={essentialTrend.slice(-10)}
+              sparklineData={essentialTrend}
               footerLabel="Billing Velocity:"
               footerValue="+$0.10 / hr"
             />
 
-            {/* Card 2.1: BATTERY STORAGE (Pylontech) */}
+            {/* ROW 2: PV INVERTER 1 (PRIMO), MULTIPLUS-II HUB, PV INVERTER 2 (SYMO) */}
+            {/* Card 2.1: PV INVERTER #1 (Fronius Primo AC-In) */}
             <SchematicCard
-              x={30}
-              y={230}
+              x={25}
+              y={200}
+              width={210}
+              height={150}
+              accent="amber"
+              icon={<FroniusIcon className="h-4 w-4" />}
+              title="PV Inverter (Primo)"
+              badge="AC-In Side"
+              primaryValue="-1 W"
+              subtext="Fronius Primo AC coupled"
+              sparklineData={[0, 0, -1, 0, -1]}
+              footerLabel="Grid Coupling:"
+              footerValue="AC-In Bus"
+            />
+
+            {/* Card 2.2: CENTER INVERTER HUB (MultiPlus-II 48/3000) */}
+            <foreignObject x={280} y={200} width={210} height={150}>
+              <div className="h-full w-full rounded-2xl border-2 border-forest bg-forest text-cream p-3.5 shadow-md flex flex-col justify-between overflow-hidden select-none">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-leaf">
+                    Victron Energy
+                  </span>
+                  <span className="rounded bg-cream/15 px-2 py-0.5 font-mono text-[9px] font-bold text-cream">
+                    ESS Hub
+                  </span>
+                </div>
+                <div>
+                  <div className="font-mono text-base font-black text-white">
+                    MultiPlus-II 48V
+                  </div>
+                  <p className="text-[10px] text-cream/70 mt-0.5">
+                    3000/35-32 (Ext Sensor)
+                  </p>
+                </div>
+                <div className="rounded-lg bg-black/25 p-1.5 flex items-center justify-between text-[11px] font-mono">
+                  <span className="text-cream/80">Mode:</span>
+                  <span className="font-bold text-leaf">Recharging</span>
+                </div>
+                <div className="border-t border-cream/15 pt-1 flex items-center justify-between font-mono text-[10px] text-cream/70">
+                  <span>Target APY:</span>
+                  <strong className="text-leaf">
+                    {financials.projectedApy}%
+                  </strong>
+                </div>
+              </div>
+            </foreignObject>
+
+            {/* Card 2.3: PV INVERTER #2 (Fronius Symo AC-Out) */}
+            <SchematicCard
+              x={535}
+              y={200}
+              width={210}
+              height={150}
+              accent="amber"
+              icon={<FroniusIcon className="h-4 w-4" />}
+              title="PV Inverter (Symo)"
+              badge="AC-Out Side"
+              primaryValue="0 W"
+              subtext="Fronius Symo Microgrid"
+              sparklineData={[0, 0, 0, 0, 0]}
+              footerLabel="Island Coupling:"
+              footerValue="AC-Out Protected"
+            />
+
+            {/* ROW 3: BATTERY STORAGE (PYLONTECH) & PV CHARGER (MPPT) */}
+            {/* Card 3.2: BATTERY STORAGE (Pylontech 48V Bank) */}
+            <SchematicCard
+              x={280}
+              y={390}
+              width={210}
+              height={145}
               accent="emerald"
               icon={<BatteryIcon className="h-4 w-4 text-emerald-700" />}
               title="Battery Storage"
@@ -251,19 +356,21 @@ export function EssLayout({ demo }: EssLayoutProps) {
               footerValue="14.4 kWh LFP Bank"
             />
 
-            {/* Card 2.3: PV INVERTER (Fronius Primo) */}
+            {/* Card 3.3: PV CHARGER (SmartSolar MPPT VE.Can) */}
             <SchematicCard
-              x={560}
-              y={230}
+              x={535}
+              y={390}
+              width={210}
+              height={145}
               accent="amber"
-              icon={<FroniusIcon className="h-4 w-4" />}
-              title="PV Inverter"
-              badge="Fronius Primo"
-              primaryValue={`${currentPower.solarYieldWatts.toFixed(0)} W`}
-              subtext={`Harvested: ${dailyTotals.solarYieldKwh.toFixed(2)} kWh`}
+              icon={<SunIcon className="h-4 w-4 text-amber-600" />}
+              title="PV Charger (MPPT)"
+              badge="DC-Coupled"
+              primaryValue="-5 W"
+              subtext="SmartSolar MPPT 250/100"
               sparklineData={solarTrend.slice(-10)}
-              footerLabel="Solar Yield:"
-              footerValue={`+$${dailyDisplacedSavings} today`}
+              footerLabel="Direct Bus:"
+              footerValue="Battery Charging Bus"
             />
           </svg>
         </div>
