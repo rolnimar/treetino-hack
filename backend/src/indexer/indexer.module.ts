@@ -16,5 +16,6 @@ import { TreesController } from './trees.controller';
     SolanaRpcService,
     IndexerService,
   ],
+  exports: [IndexerService],
 })
 export class IndexerModule {}

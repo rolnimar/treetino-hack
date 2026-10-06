@@ -30,5 +30,9 @@ export const publicActionSchema = z.discriminatedUnion('action', [
     amount: positiveU64Schema,
     tree: treeSchema,
   }),
+  z.object({
+    action: z.literal('claimRewards'),
+    treeAddress: z.string(),
+  }),
 ]);
 export type PublicAction = z.infer<typeof publicActionSchema>;

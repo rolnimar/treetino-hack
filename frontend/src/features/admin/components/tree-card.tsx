@@ -1,4 +1,9 @@
-import type { IndexedTree } from '../../../lib/schemas';
+import { useQuery } from '@tanstack/react-query';
+import { api } from '../../../lib/api';
+import {
+  type IndexedTree,
+  campaignsResponseSchema,
+} from '../../../lib/schemas';
 import { useAdmin } from '../admin-context';
 import { Card } from '../../../components/ui/card';
 import { AddressLink } from '../../../components/ui/feedback';
@@ -9,8 +14,20 @@ import { ReportsPanel } from './reports-panel';
 export function TreeCard({ tree }: { tree: IndexedTree }) {
   const { wallet, disabled, transaction } = useAdmin();
   const mine = tree.creator === wallet;
+
+  const campaignsQuery = useQuery({
+    queryKey: ['campaigns-list'],
+    queryFn: ({ signal }) =>
+      api('campaigns', campaignsResponseSchema, { signal }),
+  });
+  const campaign = campaignsQuery.data?.campaigns.find(
+    (c) => c.treeAddress === tree.address || c.treeId === tree.treeId,
+  );
+
   return (
-    <Card title={`Tree #${tree.treeId}`}>
+    <Card
+      title={`Tree #${tree.treeId}${campaign ? ` · ${campaign.title}` : ''}`}
+    >
       <div className="mb-3 flex items-center gap-3">
         <span className="rounded-full bg-leaf/15 px-3 py-1 text-xs font-medium">
           {tree.phase}
@@ -19,6 +36,37 @@ export function TreeCard({ tree }: { tree: IndexedTree }) {
           Indexed {new Date(tree.updatedAt).toLocaleString()}
         </span>
       </div>
+
+      {campaign && (
+        <div className="mb-4 rounded-xl border border-forest/15 bg-forest/5 p-4 text-xs">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <span className="font-mono font-bold text-forest uppercase">
+              {campaign.categoryBadge} · {campaign.city}, {campaign.country}
+            </span>
+            <span className="font-mono font-extrabold text-emerald-800">
+              {campaign.projectedApy} APY
+            </span>
+          </div>
+          <p className="mt-1 text-forest/75">{campaign.narrative}</p>
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-forest/10 pt-2 font-mono text-[11px]">
+            <span>
+              Off-Taker: <strong>{campaign.offTakerName}</strong>
+            </span>
+            <span>
+              Tariff: <strong>{campaign.tariffRate}</strong>
+            </span>
+            {campaign.victronSiteId && (
+              <a
+                href={`#asset/${campaign.victronSiteId}`}
+                className="text-leaf font-bold hover:underline"
+              >
+                Inspect Live Hardware & Telemetry ↗
+              </a>
+            )}
+          </div>
+        </div>
+      )}
+
       <AddressLink address={tree.address} />
       <dl className="my-5 grid gap-4 text-sm sm:grid-cols-2">
         <div>

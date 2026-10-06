@@ -1,6 +1,9 @@
 import { useState, useEffect } from 'react';
 import type { VictronDemoItem } from './victron-types';
 import { useVictronInvestments } from './use-victron-investments';
+import { useConnectedWallet } from '../wallet/use-connected-wallet';
+import { usePublicTransactions } from '../marketplace/hooks/use-public-transactions';
+import { parseTokenAmount } from '../../chain/amounts';
 import { CheckIcon } from './victron-icons';
 
 interface VictronMoneyFlowProps {
@@ -19,8 +22,11 @@ export function VictronMoneyFlow({
   const [justClaimed, setJustClaimed] = useState<string | null>(null);
   const [elapsedTicks, setElapsedTicks] = useState<number>(0);
 
-  const { investments, invest, claimYield } =
-    useVictronInvestments(walletAddress);
+  const wallet = useConnectedWallet();
+  const publicTx = usePublicTransactions(wallet);
+  const { investments, invest, claimYield } = useVictronInvestments(
+    walletAddress ?? wallet?.address,
+  );
   const currentHolding = investments[demo.siteId];
 
   // Ticking effect for live streaming yield
@@ -202,20 +208,49 @@ export function VictronMoneyFlow({
             </p>
           </div>
 
-          <div className="rounded-lg border border-forest/15 bg-cream/50 px-3.5 py-2 font-mono text-xs text-forest">
-            <span className="text-forest/70">Connected Wallet: </span>
-            {walletAddress ? (
-              <span className="text-emerald-800 font-bold">
-                {walletAddress.slice(0, 4)}…{walletAddress.slice(-4)} (
-                {walletBalance ?? '0'} mockUSDC)
-              </span>
-            ) : (
-              <span className="text-amber-800 font-semibold">
-                Demo Simulation
-              </span>
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="rounded-lg border border-forest/15 bg-cream/50 px-3.5 py-2 font-mono text-xs text-forest">
+              <span className="text-forest/70">Connected Wallet: </span>
+              {walletAddress ? (
+                <span className="text-emerald-800 font-bold">
+                  {walletAddress.slice(0, 4)}…{walletAddress.slice(-4)} (
+                  {walletBalance ?? '0'} mockUSDC)
+                </span>
+              ) : (
+                <span className="text-amber-800 font-semibold">
+                  Demo Simulation
+                </span>
+              )}
+            </div>
+
+            {wallet && (
+              <button
+                type="button"
+                disabled={publicTx.isPending}
+                onClick={() =>
+                  publicTx.mutate({
+                    action: 'giveMeMoney',
+                    amount: parseTokenAmount('1000'),
+                  })
+                }
+                className="rounded-lg border border-emerald-700/30 bg-emerald-50 px-3 py-2 font-mono text-xs font-bold text-emerald-900 hover:bg-emerald-100 transition disabled:opacity-50 shadow-2xs"
+              >
+                {publicTx.isPending ? 'Minting…' : '+ Faucet 1,000 USDC'}
+              </button>
             )}
           </div>
         </div>
+
+        {publicTx.isSuccess && (
+          <div className="mt-3 rounded-lg bg-emerald-50 border border-emerald-600/30 p-2.5 text-xs font-bold text-emerald-800">
+            Minted 1,000 mockUSDC to your devnet wallet!
+          </div>
+        )}
+        {publicTx.error && (
+          <div className="mt-3 rounded-lg bg-rose-50 border border-rose-600/30 p-2.5 text-xs font-bold text-rose-800">
+            {publicTx.error.message}
+          </div>
+        )}
 
         {/* ACTIVE POSITION CARD IF INVESTED */}
         {currentHolding && currentHolding.amountUsdc > 0 && (

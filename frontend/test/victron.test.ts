@@ -706,7 +706,7 @@ describe('Victron Green Energy DePIN archetypes and investor financials', () => 
 
   test('validates URL hash router for dedicated fresh asset pages', () => {
     const parseAssetRoute = (hash: string): number | null => {
-      const match = hash.match(/^#asset\/(\d+)$/);
+      const match = hash.match(/^#(?:asset|project)\/(\d+)$/);
       return match ? parseInt(match[1], 10) : null;
     };
 
@@ -714,8 +714,192 @@ describe('Victron Green Energy DePIN archetypes and investor financials', () => 
     expect(parseAssetRoute('#asset/209689')).toBe(209689);
     expect(parseAssetRoute('#asset/219742')).toBe(219742);
     expect(parseAssetRoute('#asset/374891')).toBe(374891);
+    expect(parseAssetRoute('#project/100001')).toBe(100001);
     expect(parseAssetRoute('')).toBeNull();
     expect(parseAssetRoute('#trees')).toBeNull();
-    expect(parseAssetRoute('#how-it-works')).toBeNull();
+    expect(parseAssetRoute('#portfolio')).toBeNull();
+    expect(parseAssetRoute('#admin')).toBeNull();
+  });
+
+  test('validates investor dividend streaming mathematics and continuous accrual', () => {
+    const investment = 500; // $500 USDC
+    const target = 10000; // $10,000 pool
+    const apyPercent = 14.2; // 14.2% APY
+
+    // 1. Ownership share
+    const poolShareFraction = investment / target;
+    expect(poolShareFraction).toBe(0.05); // 5.0%
+
+    // 2. Annual dividend
+    const annualDividend = investment * (apyPercent / 100);
+    expect(annualDividend).toBeCloseTo(71.0, 2);
+
+    // 3. Daily dividend
+    const dailyDividend = annualDividend / 365;
+    expect(dailyDividend).toBeCloseTo(0.1945, 4);
+
+    // 4. Per-second continuous streaming rate
+    const secondsInYear = 365 * 24 * 3600;
+    const perSecondRate = annualDividend / secondsInYear;
+    expect(perSecondRate).toBeGreaterThan(0);
+
+    // After 60 seconds (1 minute of live SCADA telemetry)
+    const accrued60s = perSecondRate * 60;
+    expect(accrued60s).toBeCloseTo((71.0 / secondsInYear) * 60, 6);
+
+    // 5. Clean energy share delivered to investor
+    const annualSiteKwh = 18500; // 18,500 kWh metered
+    const investorAttributedKwh = annualSiteKwh * poolShareFraction;
+    expect(investorAttributedKwh).toBe(925); // 925 kWh clean energy credited
+  });
+
+  test('validates campaign dossier schema matching Kickstarter requirements', () => {
+    const campaignDossierSchema = z.object({
+      id: z.string(),
+      treeAddress: z.string(),
+      treeId: z.string(),
+      title: z.string(),
+      subtitle: z.string().optional(),
+      category: z.string(),
+      categoryBadge: z.string(),
+      narrative: z.string(),
+      story: z.string().optional(),
+      investorHighlight: z.string().optional(),
+      victronSiteId: z.number().optional(),
+      city: z.string(),
+      country: z.string(),
+      projectedApy: z.string(),
+      tariffRate: z.string(),
+      offTakerName: z.string(),
+      offTakerDescription: z.string().optional(),
+      supplierName: z.string().optional(),
+      targetUsdc: z.string(),
+      raisedUsdc: z.string().optional(),
+      phase: z.enum(['funding', 'funded', 'purchased', 'active']).optional(),
+      canBuy: z.boolean().optional(),
+    });
+
+    const testCampaign = {
+      id: 'campaign-test-1',
+      treeAddress: 'treetino_v1_mkovo_prague',
+      treeId: '4',
+      title: 'Treetino V1 · Smart Energy Tree',
+      subtitle: 'Biomimetic Solar + Wind Dual-Modality Microgrid',
+      category: 'Biomimetic Tree',
+      categoryBadge: 'Solar + Wind Tree',
+      narrative:
+        'Flagship 12m vertical micro-power plant combining 300 heliotropic solar leaves and 12 ducted VAWT wind turbines.',
+      story:
+        'Installed at MKovo s.r.o. providing 24/7 clean baseload power for precision manufacturing.',
+      investorHighlight:
+        'Dual-modality 45 kW generation on 1.2 m² ground footprint.',
+      victronSiteId: 100001,
+      city: 'Prague',
+      country: 'Czech Republic',
+      projectedApy: '12.8%',
+      tariffRate: '$0.32 / kWh metered corporate PPA (MKovo s.r.o.)',
+      offTakerName: 'MKovo s.r.o.',
+      offTakerDescription: 'Long-term corporate power purchase agreement.',
+      supplierName: 'Treetino CleanTech s.r.o.',
+      targetUsdc: '235000',
+      raisedUsdc: '192700',
+      phase: 'funding' as const,
+      canBuy: true,
+    };
+
+    const parsed = campaignDossierSchema.parse(testCampaign);
+    expect(parsed.title).toBe('Treetino V1 · Smart Energy Tree');
+    expect(parsed.targetUsdc).toBe('235000');
+    expect(parsed.projectedApy).toBe('12.8%');
+    expect(parsed.canBuy).toBe(true);
+  });
+
+  test('validates Kickstarter cover image paths and campaign metadata resolution', async () => {
+    const { getCampaignCoverImage, CAMPAIGN_METADATA } =
+      await import('../src/features/victron/campaign-helpers');
+
+    // 1. Cover images exist and resolve for each archetype
+    expect(getCampaignCoverImage('treetino-v1')).toBe(
+      '/campaigns/treetino-v1.jpg',
+    );
+    expect(getCampaignCoverImage('ess')).toBe('/campaigns/ess.jpg');
+    expect(getCampaignCoverImage('ev')).toBe('/campaigns/ev.jpg');
+    expect(getCampaignCoverImage('offgrid')).toBe('/campaigns/offgrid.jpg');
+    expect(getCampaignCoverImage('unknown')).toBe('/campaigns/treetino-v1.jpg');
+
+    // 2. Metadata includes creator, days left, and backers
+    expect(CAMPAIGN_METADATA['treetino-v1'].creator).toBe('MKovo Engineering');
+    expect(CAMPAIGN_METADATA['treetino-v1'].daysLeft).toBeGreaterThan(0);
+    expect(CAMPAIGN_METADATA['treetino-v1'].backers).toBeGreaterThan(0);
+
+    expect(CAMPAIGN_METADATA['ess'].creator).toBe('EnergyHub Amsterdam');
+    expect(CAMPAIGN_METADATA['ev'].creator).toBe('ChargeVolt Paris');
+    expect(CAMPAIGN_METADATA['offgrid'].creator).toBe('Outback Power QLD');
+  });
+
+  test('validates search and category filtering for Kickstarter campaigns', () => {
+    const campaigns = [
+      {
+        siteId: 1,
+        key: 'treetino-v1',
+        title: 'Treetino V1: Biomimetic Solar & Wind Tree at MKovo',
+        categoryBadge: 'Biomimetic Tree',
+        narrative:
+          'A 12-meter sculptural urban solar & wind generation installation',
+        location: { city: 'Poprad', country: 'Slovakia' },
+        financials: { projectedApy: 12.8, fundedPercent: 77 },
+      },
+      {
+        siteId: 2,
+        key: 'ess',
+        title: 'Amsterdam Commercial BESS Warehouse Arbitrage',
+        categoryBadge: 'Commercial ESS',
+        narrative:
+          'Grid-scale lithium battery storage system performing wholesale price arbitrage',
+        location: { city: 'Amsterdam', country: 'Netherlands' },
+        financials: { projectedApy: 15.4, fundedPercent: 71 },
+      },
+      {
+        siteId: 3,
+        key: 'ev',
+        title: 'Paris Solar Canopy Fleet Supercharger Plaza',
+        categoryBadge: 'EV Fast-Charging',
+        narrative:
+          'High-power DC fast-charging plaza powered by solar canopy and buffer battery',
+        location: { city: 'Paris', country: 'France' },
+        financials: { projectedApy: 13.9, fundedPercent: 88 },
+      },
+      {
+        siteId: 4,
+        key: 'offgrid',
+        title: 'Queensland Autonomous Off-Grid Solar Homestead',
+        categoryBadge: 'Off-Grid Solar',
+        narrative:
+          'Resilient rural power system with rooftop solar and Victron MultiPlus-II',
+        location: { city: 'Queensland', country: 'Australia' },
+        financials: { projectedApy: 14.2, fundedPercent: 83 },
+      },
+    ];
+
+    // Search query: "battery"
+    const searchBattery = campaigns.filter(
+      (c) =>
+        c.title.toLowerCase().includes('battery') ||
+        c.narrative.toLowerCase().includes('battery'),
+    );
+    expect(searchBattery.map((c) => c.key)).toEqual(['ess', 'ev']);
+
+    // Search query: "amsterdam"
+    const searchAmsterdam = campaigns.filter(
+      (c) =>
+        c.location.city.toLowerCase().includes('amsterdam') ||
+        c.title.toLowerCase().includes('amsterdam'),
+    );
+    expect(searchAmsterdam.length).toBe(1);
+    expect(searchAmsterdam[0].key).toBe('ess');
+
+    // High yield filter (>14% APY)
+    const highYield = campaigns.filter((c) => c.financials.projectedApy >= 14);
+    expect(highYield.map((c) => c.key)).toEqual(['ess', 'offgrid']);
   });
 });

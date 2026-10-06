@@ -8,7 +8,11 @@ import {
   shareMintAddress,
   fundingVaultAddress,
 } from './addresses';
-import { buySharesInstruction, giveMeMoneyInstruction } from './instructions';
+import {
+  buySharesInstruction,
+  giveMeMoneyInstruction,
+  claimRewardsInstruction,
+} from './instructions';
 import {
   publicActionSchema,
   type PublicAction,
@@ -62,6 +66,12 @@ export async function buildPublicTransaction(
   transaction.feePayer = owner;
   if (input.action === 'giveMeMoney') {
     transaction.add(giveMeMoneyInstruction(owner, input.amount));
+    return transaction;
+  }
+  if (input.action === 'claimRewards') {
+    transaction.add(
+      claimRewardsInstruction(owner, new PublicKey(input.treeAddress)),
+    );
     return transaction;
   }
   const tree = input.tree;

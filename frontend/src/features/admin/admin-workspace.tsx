@@ -24,10 +24,10 @@ const FaucetForm = lazy(() =>
   })),
 );
 const tabs = [
-  { id: 'setup', label: 'Protocol setup' },
-  { id: 'trees', label: 'Trees' },
-  { id: 'create', label: 'Create tree' },
-  { id: 'faucet', label: 'Demo faucet' },
+  { id: 'setup', label: 'Protocol Setup' },
+  { id: 'trees', label: 'Campaigns & Trees' },
+  { id: 'create', label: 'Launch Campaign' },
+  { id: 'faucet', label: 'Demo Faucet' },
 ] as const;
 export function AdminWorkspace() {
   return (

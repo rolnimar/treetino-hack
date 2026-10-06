@@ -86,5 +86,36 @@ export const protocolSchema = z.object({
   network: z.literal('devnet'),
   programId: addressSchema,
 });
+export const campaignDossierSchema = z.object({
+  id: z.string(),
+  treeAddress: z.string(),
+  treeId: z.string(),
+  title: z.string(),
+  subtitle: z.string().optional(),
+  category: z.string(),
+  categoryBadge: z.string(),
+  narrative: z.string(),
+  story: z.string().optional(),
+  investorHighlight: z.string().optional(),
+  victronSiteId: z.number().optional(),
+  city: z.string(),
+  country: z.string(),
+  projectedApy: z.string(),
+  tariffRate: z.string(),
+  offTakerName: z.string(),
+  offTakerDescription: z.string().optional(),
+  supplierName: z.string().optional(),
+  targetUsdc: z.string(),
+  raisedUsdc: z.string().optional(),
+  phase: phaseSchema.optional(),
+  canBuy: z.boolean().optional(),
+  createdAt: z.number(),
+  updatedAt: z.number(),
+});
+export const campaignsResponseSchema = z.object({
+  campaigns: z.array(campaignDossierSchema),
+  total: z.number(),
+});
 export type IndexedTree = z.infer<typeof treeSchema>;
 export type AdminSession = z.infer<typeof sessionSchema>;
+export type CampaignDossier = z.infer<typeof campaignDossierSchema>;

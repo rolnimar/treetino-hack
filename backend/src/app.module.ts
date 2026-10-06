@@ -6,6 +6,7 @@ import { IndexerModule } from './indexer/indexer.module';
 import { ProtocolModule } from './protocol/protocol.module';
 
 import { VictronModule } from './victron/victron.module';
+import { CampaignsModule } from './campaigns/campaigns.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { VictronModule } from './victron/victron.module';
     ProtocolModule,
     IndexerModule,
     VictronModule,
+    CampaignsModule,
   ],
   controllers: [HealthController],
 })

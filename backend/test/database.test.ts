@@ -86,6 +86,8 @@ describe('automatic PostgreSQL migrations', () => {
     ).toMatchObject({ address: 'tree-address', remaining: '58', canBuy: true });
     await sql`INSERT INTO admins (wallet) VALUES ('test-wallet')`;
     await sql`INSERT INTO auth_challenges (wallet, message, expires_at) VALUES ('test-wallet', 'test-message', 123)`;
+    await sql`INSERT INTO campaigns (tree_address, title, category, category_badge, narrative, city, country, projected_apy, tariff_rate, off_taker_name, target_usdc, created_at, updated_at) VALUES ('test-tree', 'Test Project', 'Solar', 'Solar', 'A solar project', 'Brisbane', 'Australia', '10.0%', '$0.30/kWh', 'Client', '10000', 100, 100)`;
+
     for (const table of [
       'admins',
       'auth_challenges',
@@ -94,6 +96,7 @@ describe('automatic PostgreSQL migrations', () => {
       'indexed_transactions',
       'indexed_events',
       'indexed_trees',
+      'campaigns',
     ]) {
       const columns =
         await sql`SELECT c.column_name, c.data_type FROM information_schema.table_constraints t JOIN information_schema.key_column_usage k USING (constraint_catalog, constraint_schema, constraint_name) JOIN information_schema.columns c ON c.table_schema = k.table_schema AND c.table_name = k.table_name AND c.column_name = k.column_name WHERE t.constraint_type = 'PRIMARY KEY' AND t.table_schema = 'public' AND t.table_name = ${table}`;
@@ -190,7 +193,7 @@ describe('automatic PostgreSQL migrations', () => {
       readFileSync(join(config.migrationsFolder, 'meta/_journal.json'), 'utf8'),
     );
     const previousEntries = journal.entries.filter(
-      (entry: { tag: string }) => entry.tag !== '0002_remove_energy_limits',
+      (entry: { idx: number }) => entry.idx < 2,
     );
     for (const entry of previousEntries) {
       writeFileSync(

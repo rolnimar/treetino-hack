@@ -216,3 +216,21 @@ export function buySharesInstruction(
     },
   );
 }
+
+export function claimRewardsInstruction(
+  owner: PublicKey,
+  treeAddressPubkey: PublicKey,
+) {
+  return instruction(
+    'claim_rewards',
+    {},
+    {
+      owner,
+      tree: treeAddressPubkey,
+      position: positionAddress(treeAddressPubkey, owner),
+      revenue_token_account: revenueVaultAddress(treeAddressPubkey),
+      payment_token_account: paymentAtaAddress(owner),
+      token_program: TOKEN_PROGRAM_ID,
+    },
+  );
+}
