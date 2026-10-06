@@ -10,7 +10,7 @@ pub enum TreeError {
     FundingCap,
     #[msg("Arithmetic limit exceeded")]
     Overflow,
-    #[msg("Report must cover the next complete UTC day")]
+    #[msg("Day must be a nonnegative UTC midnight; reports require a completed day")]
     InvalidDay,
     #[msg("Share balance differs from the reward ledger")]
     BalanceMismatch,

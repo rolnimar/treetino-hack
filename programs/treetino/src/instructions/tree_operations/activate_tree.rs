@@ -24,9 +24,8 @@ pub struct ActivateTree<'info> {
 pub fn activate_tree(ctx: Context<ActivateTree>, first_day_start_ts: i64) -> Result<()> {
     let a = ctx.accounts;
     require!(a.tree.phase == Phase::Purchased, TreeError::InvalidPhase);
-    let now = Clock::get()?.unix_timestamp;
     require!(
-        first_day_start_ts >= now && first_day_start_ts % DAY == 0,
+        first_day_start_ts >= 0 && first_day_start_ts % DAY == 0,
         TreeError::InvalidDay
     );
     a.tree.next_day_start_ts = first_day_start_ts;

@@ -1624,7 +1624,7 @@ export type Treetino = {
     {
       "code": 6004,
       "name": "invalidDay",
-      "msg": "Report must cover the next complete UTC day"
+      "msg": "Day must be a nonnegative UTC midnight; reports require a completed day"
     },
     {
       "code": 6005,
@@ -1996,6 +1996,9 @@ export type Treetino = {
           },
           {
             "name": "nextDayStartTs",
+            "docs": [
+              "Automatic reporting starts here; explicit reports may backfill any completed UTC day."
+            ],
             "type": "i64"
           },
           {

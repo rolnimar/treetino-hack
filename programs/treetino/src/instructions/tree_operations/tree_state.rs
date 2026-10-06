@@ -23,6 +23,7 @@ pub struct Tree {
     pub target: u64,
     pub raised: u64,
     pub phase: Phase,
+    /// Automatic reporting starts here; explicit reports may backfill any completed UTC day.
     pub next_day_start_ts: i64,
     pub total_wh: u64,
     pub billed: u64,

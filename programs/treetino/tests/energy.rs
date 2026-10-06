@@ -26,21 +26,40 @@ fn reports_require_device_signature_and_complete_day() {
 }
 
 #[test]
-fn reports_can_backfill_without_a_price_schedule_or_invoice() {
+fn reports_can_backfill_any_completed_day_in_any_order_without_rewinding_the_cursor() {
     let mut e = Env::new(USDC);
     e.buy(1, USDC).unwrap();
     e.activate();
     e.set_time(START + 2 * DAY);
-    custom(
-        e.send(e.report(START + DAY, vec![1; INTERVALS]), 5),
-        TreeError::InvalidDay,
-    );
-    e.send(e.report(START, vec![0; INTERVALS]), 5).unwrap();
     e.send(e.report(START + DAY, vec![1; INTERVALS]), 5)
         .unwrap();
-    assert_eq!(e.tree().total_wh, 96);
+    e.send(e.report(START, vec![0; INTERVALS]), 5).unwrap();
+    // Explicit history is independent of activation's scheduled start.
+    e.send(e.report(START - 3 * DAY, vec![7, 9]), 5).unwrap();
+    assert_eq!(
+        e.read::<Report>(e.report_key(START - 3 * DAY)).wh,
+        vec![7, 9]
+    );
+    assert_eq!(e.tree().total_wh, 112);
     assert_eq!(e.tree().next_day_start_ts, START + 2 * DAY);
     assert_eq!(e.tree().billed, 0);
+    assert!(e.send(e.report(START - 3 * DAY, vec![99]), 5).is_err());
+    assert_eq!(e.tree().total_wh, 112);
+    for day in [-DAY, START + 1, START + 2 * DAY] {
+        custom(e.send(e.report(day, vec![1]), 5), TreeError::InvalidDay);
+        assert!(e.svm.get_account(&e.report_key(day)).is_none());
+    }
+}
+
+#[test]
+fn activation_can_start_reporting_from_a_past_utc_day() {
+    let mut e = Env::new(USDC);
+    e.buy(1, USDC).unwrap();
+    e.set_time(START + 2 * DAY);
+    e.activate_from(START - DAY);
+    assert_eq!(e.tree().next_day_start_ts, START - DAY);
+    e.send(e.report(START - DAY, vec![12]), 5).unwrap();
+    assert_eq!(e.tree().next_day_start_ts, START);
 }
 
 #[test]

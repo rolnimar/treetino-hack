@@ -29,13 +29,17 @@ vault, and investor reward positions. The program ID is
 5. `purchase_tree`: creator releases exactly the target to a token account
    owned by the configured supplier. Extra unsolicited vault deposits do not
    issue shares or change the target. They have no withdrawal path in this MVP.
-6. `activate_tree(first_day_start_ts)`: creator starts billing on a future UTC midnight
-   (or the current instant if it is midnight). This represents installation;
+6. `activate_tree(first_day_start_ts)`: creator chooses a UTC midnight on or after
+   January 1, 1970 as the automatic reporting start. Past days allow backfilling;
+   future days schedule the start. This represents installation;
    the contract cannot verify installation or enforce a physical agreement.
 7. `submit_report(day_start_ts, wh)`: the configured device key signs one transaction
    after the day ends, with the device’s unsigned **Wh** readings. The program
    stores the readings as supplied, without energy limits or a reading-count check.
-   Reports must arrive in day order; backfilling is allowed, skipping is not.
+   Any completed UTC day on or after January 1, 1970 can be reported in any order,
+   including before the activation start. The automatic cursor becomes the later
+   of its existing value and the submitted day's end, so historical submissions
+   do not rewind it. Missing older days can be submitted explicitly.
    A unique report
    PDA prevents duplicates. `day_start_ts` is an i64 Unix timestamp in seconds
    aligned to UTC midnight. Zero production is valid. Reporting does not depend
@@ -261,6 +265,10 @@ IDL and clients. Existing accounts created under the previous layouts require
 a separate migration or a fresh deployment before they can be used.
 
 This repository does not deploy or spend devnet funds automatically.
+Selected historical reporting requires deploying the rebuilt program; the older
+program requires sequential days. This date-rule change preserves instruction
+arguments and serialized account layouts, so compatible existing active trees
+can backfill after upgrading without reinitialization.
 
 The matching Anchor CLI was installed locally for this checkout at
 `target/tooling/bin/anchor`; the existing global CLI was preserved.

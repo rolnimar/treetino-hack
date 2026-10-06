@@ -34,7 +34,7 @@ pub fn submit_report(ctx: Context<SubmitReport>, day_start_ts: i64, wh: Vec<u32>
     let now = Clock::get()?.unix_timestamp;
     let next = day_start_ts.checked_add(DAY).ok_or(TreeError::Overflow)?;
     require!(
-        day_start_ts == a.tree.next_day_start_ts && day_start_ts % DAY == 0 && next <= now,
+        day_start_ts >= 0 && day_start_ts % DAY == 0 && next <= now,
         TreeError::InvalidDay
     );
     let total_wh = wh
@@ -46,7 +46,8 @@ pub fn submit_report(ctx: Context<SubmitReport>, day_start_ts: i64, wh: Vec<u32>
         .total_wh
         .checked_add(total_wh)
         .ok_or(TreeError::Overflow)?;
-    a.tree.next_day_start_ts = next;
+    // Historical submissions must not move the automatic reporting cursor backwards.
+    a.tree.next_day_start_ts = a.tree.next_day_start_ts.max(next);
     a.report.set_inner(Report {
         tree: a.tree.key(),
         day_start_ts,

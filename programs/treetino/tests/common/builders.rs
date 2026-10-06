@@ -118,6 +118,9 @@ impl Env {
         }
     }
     pub fn activate(&mut self) {
+        self.activate_from(START);
+    }
+    pub fn activate_from(&mut self, first_day_start_ts: i64) {
         let purchase = ix(
             a::PurchaseTree {
                 creator: self.creator.pubkey(),
@@ -132,9 +135,7 @@ impl Env {
         self.send(
             ix(
                 self.activate_accounts(),
-                i::ActivateTree {
-                    first_day_start_ts: START,
-                },
+                i::ActivateTree { first_day_start_ts },
             ),
             0,
         )
