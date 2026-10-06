@@ -203,4 +203,3 @@ export const mockReporterSchema = z.object({
 });
 export type IndexedReport = z.infer<typeof treeReportSchema>;
 export type CampaignDossier = z.infer<typeof campaignDossierSchema>;
-

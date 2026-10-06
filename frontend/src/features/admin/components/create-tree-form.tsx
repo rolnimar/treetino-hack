@@ -202,8 +202,7 @@ export function CreateTreeForm() {
             if (session?.accessToken) {
               try {
                 await api('campaigns', campaignDossierSchema, {
-                  method: 'POST',
-                  body: jsonBody({
+                  ...jsonBody({
                     treeAddress: computedAddress,
                     treeId: data.treeId,
                     title: data.title,

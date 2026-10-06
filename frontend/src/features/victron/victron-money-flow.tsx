@@ -17,6 +17,8 @@ export function VictronMoneyFlow({
   walletAddress,
   walletBalance,
 }: VictronMoneyFlowProps) {
+  const wallet = useConnectedWallet();
+  const publicTx = usePublicTransactions(wallet);
   const [investAmount, setInvestAmount] = useState<number>(500);
   const [justInvested, setJustInvested] = useState<boolean>(false);
   const [elapsedTicks, setElapsedTicks] = useState<number>(0);

@@ -58,14 +58,12 @@ test('client sign-in signs the exact message and uses the client-only endpoints 
     session,
   );
   expect(stub).toHaveBeenCalledTimes(2);
-  stub
-    .mockResolvedValueOnce(Response.json(challenge))
-    .mockResolvedValueOnce(
-      Response.json({
-        ...session,
-        client: { wallet: Keypair.generate().publicKey.toBase58() },
-      }),
-    );
+  stub.mockResolvedValueOnce(Response.json(challenge)).mockResolvedValueOnce(
+    Response.json({
+      ...session,
+      client: { wallet: Keypair.generate().publicKey.toBase58() },
+    }),
+  );
   await expect(
     signInClient(connected, new AbortController().signal),
   ).rejects.toThrow('Wallet account changed');

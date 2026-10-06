@@ -174,4 +174,3 @@ export interface CreateCampaignDto {
   supplierName?: string;
   targetUsdc: string;
 }
-

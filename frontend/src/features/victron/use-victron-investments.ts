@@ -86,8 +86,35 @@ export function useVictronInvestments(walletAddress: string | undefined) {
     [storageKey],
   );
 
+  const claimYield = useCallback(
+    (siteId: number, amountUsdc: number) => {
+      if (amountUsdc <= 0) return;
+      const current = safeParse(localStorage.getItem(storageKey));
+      const existing = current[siteId];
+      if (!existing) return;
+
+      const updated: InvestmentsMap = {
+        ...current,
+        [siteId]: {
+          ...existing,
+          lastClaimedAt: Date.now(),
+          totalClaimedUsdc: (existing.totalClaimedUsdc || 0) + amountUsdc,
+        },
+      };
+
+      try {
+        localStorage.setItem(storageKey, JSON.stringify(updated));
+      } catch {
+        // Ignore storage errors
+      }
+      notify();
+    },
+    [storageKey],
+  );
+
   return {
     investments,
     invest,
+    claimYield,
   };
 }

@@ -273,4 +273,3 @@ export const campaigns = pgTable(
 
 export type Campaign = typeof campaigns.$inferSelect;
 export type CampaignInput = typeof campaigns.$inferInsert;
-
