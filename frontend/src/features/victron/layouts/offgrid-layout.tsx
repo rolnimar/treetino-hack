@@ -213,7 +213,7 @@ export function OffgridLayout({ demo }: OffgridLayoutProps) {
               y={230}
               accent="emerald"
               icon={<BatteryIcon className="h-4 w-4 text-emerald-700" />}
-              title="Battery Storage"
+              title="Battery Bank"
               badge={currentPower.batteryState}
               primaryValue={`${currentPower.batterySocPercent.toFixed(1)} %`}
               subtext={`${currentPower.batteryVoltage.toFixed(2)} V · 0.6 A`}
@@ -229,7 +229,7 @@ export function OffgridLayout({ demo }: OffgridLayoutProps) {
               y={230}
               accent="amber"
               icon={<SunIcon className="h-4 w-4 text-amber-600" />}
-              title="PV Charger (MPPT)"
+              title="Solar Charger"
               badge="MPPT Active"
               primaryValue={`${currentPower.solarYieldWatts.toFixed(0)} W`}
               subtext={`Today: ${dailyTotals.solarYieldKwh.toFixed(2)} kWh`}

@@ -646,7 +646,7 @@ describe('Victron Green Energy DePIN archetypes and investor financials', () => 
         firmwareVersion: 'v3.80-treetino',
         status: 'Online',
         systemType: 'Treetino Dual-Modality Microgrid',
-        systemState: 'Cerbo GX Synchronized',
+        systemState: 'Synchronized',
         batteryVoltage: 53.48,
         batteryCurrentAmps: 14.5,
         acInput1: 'Distribution Grid Intertie',

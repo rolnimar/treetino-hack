@@ -766,7 +766,7 @@ export class VictronService {
         firmwareVersion: 'v3.80-treetino',
         status: 'Online',
         systemType: 'Treetino Dual-Modality Microgrid',
-        systemState: 'Cerbo GX Synchronized',
+        systemState: 'Synchronized',
         batteryVoltage,
         batteryCurrentAmps: batteryState === 'Charging' ? 14.5 : -12.0,
         acInput1: 'Distribution Grid Intertie',

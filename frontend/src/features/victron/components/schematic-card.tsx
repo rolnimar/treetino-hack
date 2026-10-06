@@ -111,19 +111,20 @@ export function SchematicCard({
   return (
     <foreignObject x={x} y={y} width={width} height={height}>
       <div
-        className={`h-full w-full rounded-xl border ${styles.border} ${styles.bg} p-3.5 shadow-xs flex flex-col justify-between select-none`}
+        className={`h-full w-full rounded-xl border ${styles.border} ${styles.bg} p-3 shadow-xs flex flex-col justify-between select-none overflow-hidden`}
       >
         {/* Card Header Row */}
-        <div className="flex items-center justify-between text-xs">
-          <span
-            className={`flex items-center gap-1.5 font-bold ${styles.primaryText}`}
+        <div className="flex items-center justify-between text-xs gap-1.5 min-w-0">
+          <div
+            className={`flex items-center gap-1.5 font-bold ${styles.primaryText} min-w-0 flex-1`}
+            title={title}
           >
-            {icon}
-            {title}
-          </span>
+            <span className="shrink-0">{icon}</span>
+            <span className="truncate">{title}</span>
+          </div>
           {badge && (
             <span
-              className={`rounded-sm ${styles.badgeBg} px-2 py-0.5 font-mono text-[10px] ${styles.badgeText} font-bold`}
+              className={`shrink-0 rounded-sm ${styles.badgeBg} px-1.5 py-0.5 font-mono text-[9px] ${styles.badgeText} font-bold`}
             >
               {badge}
             </span>
@@ -134,33 +135,38 @@ export function SchematicCard({
         {customContent ? (
           customContent
         ) : (
-          <div className="flex items-baseline justify-between">
-            <div>
+          <div className="flex items-baseline justify-between gap-1 my-0.5">
+            <div className="min-w-0 flex-1">
               <span
-                className={`font-mono text-2xl font-extrabold ${styles.primaryText}`}
+                className={`font-mono text-xl sm:text-2xl font-extrabold ${styles.primaryText} leading-none`}
               >
                 {primaryValue}
               </span>
               {subtext && (
-                <p className={`text-[11px] ${styles.subText} mt-0.5`}>
+                <p
+                  className={`text-[10px] ${styles.subText} mt-1 truncate`}
+                  title={subtext}
+                >
                   {subtext}
                 </p>
               )}
             </div>
             {sparklineData && sparklineData.length >= 2 && (
-              <Sparkline
-                data={sparklineData}
-                color={sparklineColor || styles.defaultSparkline}
-                width={50}
-                height={20}
-              />
+              <div className="shrink-0">
+                <Sparkline
+                  data={sparklineData}
+                  color={sparklineColor || styles.defaultSparkline}
+                  width={50}
+                  height={20}
+                />
+              </div>
             )}
           </div>
         )}
 
         {/* Progress Bar (if provided) */}
         {typeof progressPercent === 'number' && (
-          <div className="space-y-1">
+          <div className="space-y-1 my-0.5">
             <div
               className={`h-1.5 w-full overflow-hidden rounded-full ${styles.progressBg}`}
             >
@@ -177,10 +183,12 @@ export function SchematicCard({
         {/* Card Footer (if provided) */}
         {(footerLabel || footerValue) && (
           <div
-            className={`border-t ${styles.footerBorder} pt-1.5 font-mono text-[10px] ${styles.footerText} flex items-center justify-between`}
+            className={`border-t ${styles.footerBorder} pt-1 font-mono text-[9px] ${styles.footerText} flex items-center justify-between gap-1 min-w-0`}
           >
-            <span>{footerLabel}</span>
-            {footerValue && <strong>{footerValue}</strong>}
+            <span className="truncate min-w-0">{footerLabel}</span>
+            {footerValue && (
+              <strong className="shrink-0 truncate">{footerValue}</strong>
+            )}
           </div>
         )}
       </div>

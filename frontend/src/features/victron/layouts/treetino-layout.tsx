@@ -284,23 +284,23 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
             className="w-full h-auto min-w-[680px] select-none"
           >
             {/* CONDUIT PIPES */}
-            {/* Pipe 1: Solar Leaves (240, 110) -> Trunk Core (320, 110) */}
+            {/* Pipe 1: Solar Leaves (235, 105) -> Trunk Core (280, 105) */}
             <ConduitLine
-              x1={240}
-              y1={110}
-              x2={320}
-              y2={110}
+              x1={235}
+              y1={105}
+              x2={280}
+              y2={105}
               flow={
                 flowMode !== 'funds' && currentSolarWatts > 0 ? 'amber' : null
               }
             />
 
-            {/* Pipe 2: Trunk Core (490, 110) -> MKovo s.r.o. (560, 110) */}
+            {/* Pipe 2: Trunk Core (490, 105) -> MKovo s.r.o. (535, 105) */}
             <ConduitLine
               x1={490}
-              y1={110}
-              x2={560}
-              y2={110}
+              y1={105}
+              x2={535}
+              y2={105}
               flow={
                 flowMode !== 'funds' && clientLoadWatts > 0 ? 'emerald' : null
               }
@@ -311,11 +311,11 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
               }
             />
 
-            {/* Pipe 3: Trunk Core bottom (405, 190) -> Trunk Battery (405, 230) */}
+            {/* Pipe 3: Trunk Core bottom (385, 180) -> Trunk Battery top (385, 230) */}
             <ConduitLine
-              x1={405}
-              y1={190}
-              x2={405}
+              x1={385}
+              y1={180}
+              x2={385}
               y2={230}
               flow={
                 flowMode !== 'funds'
@@ -328,21 +328,21 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
               }
             />
 
-            {/* Pipe 4: Wind Turbines (240, 310) -> Trunk Battery / DC Bus (320, 310) */}
+            {/* Pipe 4: Wind Turbines (235, 305) -> Trunk Battery / DC Bus (280, 305) */}
             <ConduitLine
-              x1={240}
-              y1={310}
-              x2={320}
-              y2={310}
+              x1={235}
+              y1={305}
+              x2={280}
+              y2={305}
               flow={flowMode !== 'funds' && currentWindWatts > 0 ? 'sky' : null}
             />
 
-            {/* Pipe 5: Trunk Battery / DC Bus (490, 310) -> Grid Intertie (560, 310) */}
+            {/* Pipe 5: Trunk Battery / DC Bus (490, 305) -> Grid Intertie (535, 305) */}
             <ConduitLine
               x1={490}
-              y1={310}
-              x2={560}
-              y2={310}
+              y1={305}
+              x2={535}
+              y2={305}
               flow={
                 flowMode !== 'funds'
                   ? gridWatts < 0
@@ -357,11 +357,13 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
             {/* HARDWARE NODES */}
             {/* Card 1.1: 300 Heliotropic Solar Leaves */}
             <SchematicCard
-              x={30}
+              x={25}
               y={30}
+              width={210}
+              height={150}
               accent="amber"
               icon={<SunIcon className="h-4 w-4 text-amber-600" />}
-              title="Solar Leaves (300x)"
+              title="Solar Leaves"
               badge="10 kWp"
               primaryValue={
                 currentSolarWatts >= 1000
@@ -370,30 +372,30 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
               }
               subtext={`Irradiance: ${simIrradiance} W/m²`}
               sparklineData={solarTrend.slice(-10)}
-              footerLabel="Elevation Angle:"
+              footerLabel="Elevation:"
               footerValue={`${trackingElevation}° (+32% Boost)`}
             />
 
             {/* Card 1.2: Biomimetic Trunk Core Hub */}
-            <foreignObject x={320} y={30} width={170} height={160}>
-              <div className="h-full w-full rounded-2xl border-2 border-forest/20 bg-cream/90 shadow-md flex flex-col justify-between overflow-hidden text-center select-none">
-                <div className="bg-forest py-2 text-white">
-                  <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 font-mono text-xs font-black">
-                    GX
-                  </div>
-                  <div className="mt-1 font-mono text-[10px] font-bold tracking-tight text-white/90">
+            <foreignObject x={280} y={30} width={210} height={150}>
+              <div className="h-full w-full rounded-2xl border-2 border-forest/20 bg-cream/90 shadow-md flex flex-col justify-between overflow-hidden text-center select-none p-3">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-forest/70">
                     Cerbo GX + MultiPlus-II
-                  </div>
+                  </span>
+                  <span className="rounded bg-forest/10 px-2 py-0.5 font-mono text-[9px] font-bold text-forest">
+                    GX Hub
+                  </span>
                 </div>
-                <div className="p-2 flex flex-col items-center justify-center">
+                <div>
                   <span className="rounded-full bg-forest/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-forest">
                     Mode: {demo.systemInfo.systemState}
                   </span>
-                  <div className="mt-1 font-mono text-xs font-extrabold text-emerald-800">
+                  <div className="mt-1 font-mono text-base font-extrabold text-emerald-800">
                     {(totalGenWatts / 1000).toFixed(2)} kW Gen
                   </div>
                 </div>
-                <div className="bg-white/80 py-1 font-mono text-[9px] text-forest/60 border-t border-forest/10">
+                <div className="border-t border-forest/10 pt-1 font-mono text-[9px] text-forest/60">
                   Dual-Modality Microgrid Hub
                 </div>
               </div>
@@ -401,14 +403,16 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
 
             {/* Card 1.3: Client Off-Taker (MKovo s.r.o.) */}
             <SchematicCard
-              x={560}
+              x={535}
               y={30}
+              width={210}
+              height={150}
               accent="emerald"
               icon={<PowerPlugIcon className="h-4 w-4 text-emerald-700" />}
-              title="Client: MKovo s.r.o."
+              title="MKovo s.r.o."
               badge="Corporate PPA"
               primaryValue={`${(clientLoadWatts / 1000).toFixed(2)} kW`}
-              subtext="Industrial CNC Machining"
+              subtext="Precision CNC Machining"
               sparklineData={loadTrend.slice(-10)}
               footerLabel="Contracted Tariff:"
               footerValue="$0.32 / kWh"
@@ -416,12 +420,14 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
 
             {/* Card 2.1: 12 Ducted VAWT Turbines */}
             <SchematicCard
-              x={30}
+              x={25}
               y={230}
+              width={210}
+              height={150}
               accent="sky"
               icon={<WindIcon className="h-4 w-4 text-sky-700" />}
-              title="VAWT Turbines (12x)"
-              badge="35 kWp Ducted"
+              title="VAWT Turbines"
+              badge="35 kWp"
               primaryValue={
                 currentWindWatts >= 1000
                   ? `${(currentWindWatts / 1000).toFixed(2)} kW`
@@ -430,14 +436,15 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
               subtext={`Speed: ${simWindSpeed.toFixed(1)} m/s · ${calculatedRpm} RPM`}
               progressPercent={Math.min(100, (currentWindWatts / 35000) * 100)}
               footerLabel={`Noise: ${calculatedNoise} dB(A)`}
-              footerValue="Venturi Boost (+27%)"
+              footerValue="+27% Venturi"
             />
 
             {/* Card 2.2: Trunk Battery Storage */}
             <SchematicCard
-              x={320}
+              x={280}
               y={230}
-              width={170}
+              width={210}
+              height={150}
               accent="emerald"
               icon={<BatteryIcon className="h-4 w-4 text-emerald-700" />}
               title="Trunk Battery"
@@ -452,12 +459,14 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
 
             {/* Card 2.3: Regional Grid Intertie */}
             <SchematicCard
-              x={560}
+              x={535}
               y={230}
+              width={210}
+              height={150}
               accent="forest"
               icon={<GridIcon className="h-4 w-4 text-forest/70" />}
               title="Grid Intertie"
-              badge="Distribution AC"
+              badge="Distribution"
               primaryValue={
                 gridWatts < 0
                   ? `${(-gridWatts / 1000).toFixed(2)} kW Export`
@@ -467,7 +476,7 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
               }
               subtext={
                 gridWatts < 0
-                  ? 'Exporting excess green power'
+                  ? 'Exporting excess power'
                   : gridWatts > 0
                     ? 'Importing grid reserve'
                     : 'Self-sufficient balance'
@@ -498,7 +507,7 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
                 </div>
                 <div className="border-t border-forest/10 pt-1.5">
                   <span className="text-forest/60">Autonomous AI Mode:</span>
-                  <div className="font-bold text-emerald-900 mt-0.5 truncate">
+                  <div className="font-bold text-emerald-900 mt-0.5 text-[10px] leading-snug">
                     {selectedAiMode}
                   </div>
                 </div>

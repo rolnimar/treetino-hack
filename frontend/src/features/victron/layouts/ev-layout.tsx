@@ -90,46 +90,46 @@ export function EvLayout({ demo }: EvLayoutProps) {
         <div className="xl:col-span-9 space-y-4">
           <div className="overflow-x-auto rounded-2xl border border-forest/15 bg-[#fbfaf7] p-3 sm:p-5 flex items-center">
             <svg
-              viewBox="0 0 770 700"
+              viewBox="0 0 770 745"
               className="w-full h-auto min-w-[720px] select-none"
             >
               {/* CONDUIT PIPES LAYER */}
-              {/* 1. Grid bottom (130, 165) down to EVCS #1 top (130, 190) */}
+              {/* 1. Grid bottom (130, 170) down to EVCS #1 top (130, 205) */}
               <ConduitLine
                 x1={130}
-                y1={165}
+                y1={170}
                 x2={130}
-                y2={190}
+                y2={205}
                 flow={flowMode !== 'funds' ? 'rose' : null}
                 fundsFlow={
                   flowMode === 'funds' || flowMode === 'both' ? 'gold' : null
                 }
               />
 
-              {/* 2. EVCS #1 right (235, 262) to Quattro Inverter left (280, 262) */}
+              {/* 2. EVCS #1 right (235, 280) to Quattro Inverter left (280, 280) */}
               <ConduitLine
                 x1={235}
-                y1={262}
+                y1={280}
                 x2={280}
-                y2={262}
+                y2={280}
                 flow={flowMode !== 'funds' ? 'rose' : null}
               />
 
-              {/* 3. AC Loads bottom (385, 165) down to Quattro AC-In top (385, 190) */}
+              {/* 3. AC Loads bottom (385, 170) down to Quattro AC-In top (385, 205) */}
               <ConduitLine
                 x1={385}
-                y1={165}
+                y1={170}
                 x2={385}
-                y2={190}
+                y2={205}
                 flow={flowMode !== 'funds' ? 'emerald' : null}
               />
 
-              {/* 4. Quattro AC-Out right (490, 262) to EVCS #2 left (535, 262) */}
+              {/* 4. Quattro AC-Out right (490, 280) to EVCS #2 left (535, 280) */}
               <ConduitLine
                 x1={490}
-                y1={262}
+                y1={280}
                 x2={535}
-                y2={262}
+                y2={280}
                 flow={flowMode !== 'funds' ? 'sky' : null}
                 fundsFlow={
                   flowMode === 'funds' || flowMode === 'both'
@@ -138,85 +138,85 @@ export function EvLayout({ demo }: EvLayoutProps) {
                 }
               />
 
-              {/* 5. Branch up from AC-Out (512, 262) to Essential Loads (535, 165) */}
+              {/* 5. Branch up from AC-Out (512, 280) to Essential Loads (535, 170) */}
               <path
-                d="M 512 262 V 165 H 535"
+                d="M 512 280 V 170 H 535"
                 className="vrm-conduit-outer"
                 fill="none"
               />
               <path
-                d="M 512 262 V 165 H 535"
+                d="M 512 280 V 170 H 535"
                 className="vrm-conduit-inner"
                 fill="none"
               />
               {flowMode !== 'funds' && (
                 <path
-                  d="M 512 262 V 165 H 535"
+                  d="M 512 280 V 170 H 535"
                   className="vrm-flow-sky"
                   fill="none"
                 />
               )}
 
-              {/* 6. Branch down from AC-Out (512, 262) to PV Inverter #2 (535, 432) */}
+              {/* 6. Branch down from AC-Out (512, 280) to PV Inverter #2 (535, 465) */}
               <path
-                d="M 512 262 V 432 H 535"
+                d="M 512 280 V 465 H 535"
                 className="vrm-conduit-outer"
                 fill="none"
               />
               <path
-                d="M 512 262 V 432 H 535"
+                d="M 512 280 V 465 H 535"
                 className="vrm-conduit-inner"
                 fill="none"
               />
               {flowMode !== 'funds' && (
                 <path
-                  d="M 535 432 H 512 V 262"
+                  d="M 535 465 H 512 V 280"
                   className="vrm-flow-amber"
                   fill="none"
                 />
               )}
 
-              {/* 7. Quattro bottom (385, 335) down to Battery top (385, 360) */}
+              {/* 7. Quattro bottom (385, 355) down to Battery top (385, 390) */}
               <ConduitLine
                 x1={385}
-                y1={335}
+                y1={355}
                 x2={385}
-                y2={360}
+                y2={390}
                 flow={flowMode !== 'funds' ? 'emerald' : null}
               />
 
-              {/* 8. Battery bottom (385, 505) down to y:602 and right to PV Charger (535, 602) */}
+              {/* 8. Battery bottom (385, 540) down to y:650 and right to PV Charger (535, 650) */}
               <path
-                d="M 385 505 V 602 H 535"
+                d="M 385 540 V 650 H 535"
                 className="vrm-conduit-outer"
                 fill="none"
               />
               <path
-                d="M 385 505 V 602 H 535"
+                d="M 385 540 V 650 H 535"
                 className="vrm-conduit-inner"
                 fill="none"
               />
               {flowMode !== 'funds' && (
                 <path
-                  d="M 535 602 H 385 V 505"
+                  d="M 535 650 H 385 V 540"
                   className="vrm-flow-amber"
                   fill="none"
                 />
               )}
 
-              {/* 9. PV Inverter #1 top (130, 360) up to EVCS #1 bottom (130, 335) */}
+              {/* 9. PV Inverter #1 top (130, 390) up to EVCS #1 bottom (130, 355) */}
               <ConduitLine
                 x1={130}
-                y1={360}
+                y1={390}
                 x2={130}
-                y2={335}
+                y2={355}
                 flow={flowMode !== 'funds' ? 'amber' : null}
               />
 
               {/* Junction Dots */}
               <circle
                 cx="130"
-                cy="262"
+                cy="280"
                 r="6"
                 fill="#e11d48"
                 stroke="#ffffff"
@@ -224,7 +224,7 @@ export function EvLayout({ demo }: EvLayoutProps) {
               />
               <circle
                 cx="512"
-                cy="262"
+                cy="280"
                 r="6"
                 fill="#0284c7"
                 stroke="#ffffff"
@@ -239,16 +239,16 @@ export function EvLayout({ demo }: EvLayoutProps) {
                 x={25}
                 y={20}
                 width={210}
-                height={145}
+                height={150}
                 accent="rose"
                 icon={<GridIcon className="h-4 w-4 text-rose-700" />}
                 title="Grid Supply"
                 badge="3-Phase 400V"
                 primaryValue={`${(currentPower.gridWatts || 8717).toFixed(0)} W`}
-                subtext="Commercial Fast-Feed Intertie"
+                subtext="Fast-feed grid intertie"
                 sparklineData={gridTrend}
                 footerLabel="Grid Meter:"
-                footerValue="VM-3P75CT Metered"
+                footerValue="VM-3P75CT"
               />
 
               {/* Card 1.2: AC LOADS */}
@@ -256,13 +256,13 @@ export function EvLayout({ demo }: EvLayoutProps) {
                 x={280}
                 y={20}
                 width={210}
-                height={145}
+                height={150}
                 accent="emerald"
                 icon={<PowerPlugIcon className="h-4 w-4 text-emerald-700" />}
                 title="AC Loads"
                 badge="Auxiliary"
                 primaryValue="607 W"
-                subtext="Facility lighting & canopy HVAC"
+                subtext="Canopy lighting & HVAC"
                 sparklineData={acLoadTrend}
                 footerLabel="Billed Tariff:"
                 footerValue="-$0.07 / hr"
@@ -273,13 +273,13 @@ export function EvLayout({ demo }: EvLayoutProps) {
                 x={535}
                 y={20}
                 width={210}
-                height={145}
+                height={150}
                 accent="sky"
                 icon={<PowerPlugIcon className="h-4 w-4 text-sky-700" />}
                 title="Essential Loads"
                 badge="EV Bus"
                 primaryValue="8109 W"
-                subtext="Dedicated high-speed charging bus"
+                subtext="Dedicated EV charging bus"
                 sparklineData={essentialTrend}
                 footerLabel="Throughput:"
                 footerValue="+$3.41 / hr"
@@ -289,21 +289,21 @@ export function EvLayout({ demo }: EvLayoutProps) {
               {/* Card 2.1: EVCS STATION #1 (ACTIVE 14.45 kW) */}
               <SchematicCard
                 x={25}
-                y={190}
+                y={205}
                 width={210}
-                height={145}
+                height={150}
                 accent="sky"
                 icon={<EvChargerIcon className="h-4 w-4 text-sky-600" />}
                 title="EVCS Bay #1"
                 badge="Active 32A"
                 primaryValue="14.45 kW"
-                subtext="Fast charging session in progress"
+                subtext="Fast charging in progress"
                 footerLabel="Session Rate:"
                 footerValue="$0.42 / kWh"
               />
 
               {/* Card 2.2: QUATTRO INVERTER HUB */}
-              <foreignObject x={280} y={190} width={210} height={145}>
+              <foreignObject x={280} y={205} width={210} height={150}>
                 <div className="h-full w-full rounded-2xl border-2 border-forest bg-forest text-cream p-3.5 shadow-md flex flex-col justify-between overflow-hidden select-none">
                   <div className="flex items-center justify-between text-xs">
                     <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-leaf">
@@ -330,15 +330,15 @@ export function EvLayout({ demo }: EvLayoutProps) {
               {/* Card 2.3: EVCS STATION #2 (STANDBY) */}
               <SchematicCard
                 x={535}
-                y={190}
+                y={205}
                 width={210}
-                height={145}
+                height={150}
                 accent="forest"
                 icon={<EvChargerIcon className="h-4 w-4 text-forest/70" />}
                 title="EVCS Bay #2"
                 badge="Standby"
                 primaryValue="EV Ready"
-                subtext="Awaiting vehicle connection"
+                subtext="Awaiting incoming vehicle"
                 footerLabel="Station State:"
                 footerValue="Available"
               />
@@ -347,15 +347,15 @@ export function EvLayout({ demo }: EvLayoutProps) {
               {/* Card 3.1: PV INVERTER #1 (Canopy West) */}
               <SchematicCard
                 x={25}
-                y={360}
+                y={390}
                 width={210}
-                height={145}
+                height={150}
                 accent="amber"
                 icon={<FroniusIcon className="h-4 w-4" />}
-                title="Canopy Solar (West)"
-                badge="Fronius Primo"
+                title="PV Inverter"
+                badge="Canopy West"
                 primaryValue="0 W"
-                subtext="Canopy West Array (AC-In)"
+                subtext="Canopy West Array"
                 sparklineData={[0, 0, 0, 0, 0]}
                 footerLabel="Grid Coupling:"
                 footerValue="AC-In Side"
@@ -364,9 +364,9 @@ export function EvLayout({ demo }: EvLayoutProps) {
               {/* Card 3.2: BUFFER BATTERY (Lynx Shunt) */}
               <SchematicCard
                 x={280}
-                y={360}
+                y={390}
                 width={210}
-                height={145}
+                height={150}
                 accent="emerald"
                 icon={<BatteryIcon className="h-4 w-4 text-emerald-700" />}
                 title="Buffer Storage"
@@ -375,24 +375,24 @@ export function EvLayout({ demo }: EvLayoutProps) {
                 subtext="52.49 V · 1000A Shunt"
                 sparklineData={batteryTrend}
                 progressPercent={currentPower.batterySocPercent}
-                footerLabel="Bank Capacity:"
-                footerValue="48V High-Rate BESS"
+                footerLabel="Reserve Bank:"
+                footerValue="48V High-Rate"
               />
 
               {/* Card 3.3: PV INVERTER #2 (Canopy East) */}
               <SchematicCard
                 x={535}
-                y={360}
+                y={390}
                 width={210}
-                height={145}
+                height={150}
                 accent="amber"
                 icon={<FroniusIcon className="h-4 w-4" />}
-                title="Canopy Solar (East)"
-                badge="Fronius Symo"
+                title="PV Inverter"
+                badge="Canopy East"
                 primaryValue="118 W"
-                subtext="Canopy East Array (AC-Out)"
+                subtext="Canopy East Array"
                 sparklineData={[80, 95, 110, 105, 118]}
-                footerLabel="Island Coupling:"
+                footerLabel="Island Bus:"
                 footerValue="AC-Out Side"
               />
 
@@ -400,22 +400,22 @@ export function EvLayout({ demo }: EvLayoutProps) {
               {/* Card 4.3: PV CHARGER (SmartSolar MPPT RS 450/200) */}
               <SchematicCard
                 x={535}
-                y={530}
+                y={575}
                 width={210}
-                height={145}
+                height={150}
                 accent="amber"
                 icon={<SunIcon className="h-4 w-4 text-amber-600" />}
-                title="PV Charger (MPPT)"
+                title="Solar Charger"
                 badge="SmartSolar"
                 primaryValue="31 W"
-                subtext="SmartSolar MPPT RS 450/200"
+                subtext="MPPT RS 450/200"
                 sparklineData={
                   solarTrend.length > 0
                     ? solarTrend.slice(-10)
                     : [15, 20, 28, 25, 31]
                 }
                 footerLabel="DC Coupling:"
-                footerValue="Direct Battery Bus"
+                footerValue="Battery Direct"
               />
             </svg>
           </div>
