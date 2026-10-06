@@ -11,8 +11,12 @@ import { VictronDemos } from '../victron/victron-demos';
 
 export function Marketplace({
   onSelectAsset,
+  searchQuery,
+  onClearSearch,
 }: {
   onSelectAsset?: (siteId: number) => void;
+  searchQuery?: string;
+  onClearSearch?: () => void;
 } = {}) {
   const wallet = useConnectedWallet();
   return (
@@ -20,15 +24,21 @@ export function Marketplace({
       key={wallet?.address ?? 'disconnected'}
       wallet={wallet}
       onSelectAsset={onSelectAsset}
+      searchQuery={searchQuery}
+      onClearSearch={onClearSearch}
     />
   );
 }
 function PublicPortfolio({
   wallet,
   onSelectAsset,
+  searchQuery,
+  onClearSearch,
 }: {
   wallet: ConnectedWallet | null;
   onSelectAsset?: (siteId: number) => void;
+  searchQuery?: string;
+  onClearSearch?: () => void;
 }) {
   const balance = useMockUsdc(wallet?.address);
   const transaction = usePublicTransactions(wallet);
@@ -38,12 +48,12 @@ function PublicPortfolio({
     balance.isPending ||
     transaction.isPending;
   return (
-    <section
-      id="trees"
-      aria-label="Public tree marketplace"
-      className="border-t border-forest/20 py-12"
-    >
-      <VictronDemos onSelectAsset={onSelectAsset} />
+    <section id="trees" aria-label="Public tree marketplace" className="py-6">
+      <VictronDemos
+        onSelectAsset={onSelectAsset}
+        searchQuery={searchQuery}
+        onClearSearch={onClearSearch}
+      />
 
       <div className="mt-12 border-t border-forest/20 pt-10">
         <p className="eyebrow">ON-CHAIN ASSET POOLS</p>

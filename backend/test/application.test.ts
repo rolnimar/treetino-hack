@@ -369,6 +369,8 @@ describe('compiled NestJS application running on Bun', () => {
       '/api/auth/client/challenge',
       '/api/auth/client/login',
       '/api/auth/login',
+      '/api/campaigns',
+      '/api/campaigns/{id}',
       '/api/client/me',
       '/api/client/trees',
       '/api/client/trees/{address}/reports',
@@ -443,5 +445,133 @@ describe('compiled NestJS application running on Bun', () => {
     for (const query of ['after=-1', 'limit=1001', 'after=1.5', 'limit=abc']) {
       expect((await fetch(baseUrl + '/api/events?' + query)).status).toBe(400);
     }
+  });
+
+  test('serves public clean energy campaigns and detail dossiers', async () => {
+    const listRes = await fetch(baseUrl + '/api/campaigns');
+    expect(listRes.status).toBe(200);
+    const data = await listRes.json();
+    expect(data.campaigns.length).toBeGreaterThanOrEqual(4);
+    const offgrid = data.campaigns.find(
+      (c: { victronSiteId: number }) => c.victronSiteId === 209689,
+    );
+    expect(offgrid).toMatchObject({
+      title: 'Off-Grid Solar Microgrid',
+      category: 'Off-Grid Solar',
+      projectedApy: '8.5%',
+      city: 'Queensland',
+      country: 'Australia',
+    });
+
+    const detailRes = await fetch(baseUrl + '/api/campaigns/209689');
+    expect(detailRes.status).toBe(200);
+    const detail = await detailRes.json();
+    expect(detail.title).toBe('Off-Grid Solar Microgrid');
+    expect(detail.tariffRate).toContain('$0.40');
+
+    const notFound = await fetch(baseUrl + '/api/campaigns/missing-tree-999');
+    expect(notFound.status).toBe(404);
+
+    // Verify unauthenticated campaign creation is rejected
+    const unauthPost = await fetch(baseUrl + '/api/campaigns', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        treeAddress: 'lisbon_tree_123',
+        title: 'Lisbon Solar Carport',
+        category: 'Solar Carport',
+        categoryBadge: 'Solar Carport',
+        narrative: 'Urban charging and clean solar carport.',
+        city: 'Lisbon',
+        country: 'Portugal',
+        projectedApy: '13.5%',
+        tariffRate: '$0.36 / kWh',
+        offTakerName: 'Lisbon Metro Hub',
+        targetUsdc: '45000',
+      }),
+    });
+    expect(unauthPost.status).toBe(401);
+
+    // Create an admin and generate a valid JWT token
+    const adminWallet = 'AdminWalletForCampaignTesting1111111111111111';
+    const [adminRow] =
+      await database.sql`INSERT INTO admins (wallet) VALUES (${adminWallet}) RETURNING id, wallet`;
+    const adminToken = await new SignJWT({
+      wallet: adminWallet,
+      role: 'admin',
+    })
+      .setProtectedHeader({ alg: 'HS256' })
+      .setSubject(adminRow.id)
+      .setIssuer('treetino')
+      .setAudience('treetino-admin')
+      .setIssuedAt()
+      .setExpirationTime('1h')
+      .sign(new TextEncoder().encode('test-only-secret-32-bytes-or-longer'));
+
+    // Authenticated creation succeeds
+    const createRes = await fetch(baseUrl + '/api/campaigns', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        treeAddress: 'lisbon_tree_123',
+        treeId: '5',
+        title: 'Lisbon Solar Carport',
+        subtitle: 'Urban Transit Hub Clean Energy',
+        category: 'Solar Carport',
+        categoryBadge: 'Solar Carport',
+        narrative: 'High-traffic urban charging with commercial PPA.',
+        story: 'Detailed hardware story in Lisbon.',
+        city: 'Lisbon',
+        country: 'Portugal',
+        projectedApy: '13.5%',
+        tariffRate: '$0.36 / kWh',
+        offTakerName: 'Lisbon Metro Hub',
+        targetUsdc: '45000',
+      }),
+    });
+    expect(createRes.status).toBe(201);
+    const created = await createRes.json();
+    expect(created.title).toBe('Lisbon Solar Carport');
+
+    // Authenticated update via PUT succeeds
+    const updateRes = await fetch(baseUrl + '/api/campaigns/lisbon_tree_123', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${adminToken}`,
+      },
+      body: JSON.stringify({
+        treeAddress: 'lisbon_tree_123',
+        treeId: '5',
+        title: 'Lisbon Solar Carport (Phase 2)',
+        subtitle: 'Expanded Capacity Hub',
+        category: 'Solar Carport',
+        categoryBadge: 'Solar Carport',
+        narrative: 'Expanded 80 kW canopy installation.',
+        story: 'Upgraded hardware specifications.',
+        city: 'Lisbon',
+        country: 'Portugal',
+        projectedApy: '14.0%',
+        tariffRate: '$0.38 / kWh',
+        offTakerName: 'Lisbon Metro Hub & Fleet',
+        targetUsdc: '60000',
+      }),
+    });
+    expect(updateRes.status).toBe(200);
+    const updated = await updateRes.json();
+    expect(updated.title).toBe('Lisbon Solar Carport (Phase 2)');
+    expect(updated.projectedApy).toBe('14.0%');
+
+    // GET lists the new campaign
+    const getList = await fetch(baseUrl + '/api/campaigns');
+    const listBody = await getList.json();
+    const foundLisbon = listBody.campaigns.find(
+      (c: { treeAddress: string }) => c.treeAddress === 'lisbon_tree_123',
+    );
+    expect(foundLisbon).toBeDefined();
+    expect(foundLisbon.title).toBe('Lisbon Solar Carport (Phase 2)');
   });
 });

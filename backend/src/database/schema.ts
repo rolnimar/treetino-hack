@@ -242,3 +242,35 @@ export const dailySpotPrices = pgTable('daily_spot_prices', {
   date: text('date').notNull().unique(),
   quote: jsonb('quote').$type<SpotPriceQuote>().notNull(),
 });
+
+export const campaigns = pgTable(
+  'campaigns',
+  {
+    id: uuidPrimaryKey(),
+    treeAddress: text('tree_address').notNull(),
+    treeId: text('tree_id'),
+    title: text('title').notNull(),
+    subtitle: text('subtitle'),
+    category: text('category').notNull(),
+    categoryBadge: text('category_badge').notNull(),
+    narrative: text('narrative').notNull(),
+    story: text('story'),
+    investorHighlight: text('investor_highlight'),
+    victronSiteId: integer('victron_site_id'),
+    city: text('city').notNull(),
+    country: text('country').notNull(),
+    projectedApy: text('projected_apy').notNull(),
+    tariffRate: text('tariff_rate').notNull(),
+    offTakerName: text('off_taker_name').notNull(),
+    offTakerDescription: text('off_taker_description'),
+    supplierName: text('supplier_name'),
+    targetUsdc: text('target_usdc').notNull(),
+    createdAt: bigint('created_at', { mode: 'number' }).notNull(),
+    updatedAt: bigint('updated_at', { mode: 'number' }).notNull(),
+  },
+  (table) => [uniqueIndex('campaigns_tree_address').on(table.treeAddress)],
+);
+
+export type Campaign = typeof campaigns.$inferSelect;
+export type CampaignInput = typeof campaigns.$inferInsert;
+

@@ -32,5 +32,6 @@ import { SpotPriceService } from '../billing/spot-price.service';
     SpotPriceService,
     BillingService,
   ],
+  exports: [IndexerService],
 })
 export class IndexerModule {}

@@ -121,3 +121,57 @@ export interface ReportSimulation {
   alreadyReported: boolean;
   wh: number[];
 }
+
+export interface CampaignDossier {
+  id: string;
+  treeAddress: string;
+  treeId: string;
+  title: string;
+  subtitle?: string;
+  category: string;
+  categoryBadge: string;
+  narrative: string;
+  story?: string;
+  investorHighlight?: string;
+  victronSiteId?: number;
+  city: string;
+  country: string;
+  projectedApy: string;
+  tariffRate: string;
+  offTakerName: string;
+  offTakerDescription?: string;
+  supplierName?: string;
+  targetUsdc: string;
+  raisedUsdc?: string;
+  phase?: TreePhase;
+  canBuy?: boolean;
+  createdAt: number;
+  updatedAt: number;
+}
+
+export interface CampaignsResponse {
+  campaigns: CampaignDossier[];
+  total: number;
+}
+
+export interface CreateCampaignDto {
+  treeAddress: string;
+  treeId?: string;
+  title: string;
+  subtitle?: string;
+  category: string;
+  categoryBadge: string;
+  narrative: string;
+  story?: string;
+  investorHighlight?: string;
+  victronSiteId?: number;
+  city: string;
+  country: string;
+  projectedApy: string;
+  tariffRate: string;
+  offTakerName: string;
+  offTakerDescription?: string;
+  supplierName?: string;
+  targetUsdc: string;
+}
+

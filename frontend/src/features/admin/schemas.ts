@@ -41,6 +41,23 @@ export const createTreeFormSchema = z.object({
   client: walletSchema,
   reporter: walletSchema,
 });
+export const createCampaignFormSchema = createTreeFormSchema.extend({
+  title: z.string().min(2, 'Enter a campaign title'),
+  subtitle: z.string().optional(),
+  category: z.string().min(2, 'Enter a category'),
+  categoryBadge: z.string().min(2, 'Enter a category badge'),
+  narrative: z.string().min(10, 'Provide a short narrative pitch'),
+  story: z.string().optional(),
+  investorHighlight: z.string().optional(),
+  victronSiteId: z.number().optional(),
+  city: z.string().min(1, 'City is required'),
+  country: z.string().min(1, 'Country is required'),
+  projectedApy: z.string().min(1, 'Enter projected APY (e.g. 14.2%)'),
+  tariffRate: z.string().min(1, 'Enter tariff rate (e.g. $0.40/kWh)'),
+  offTakerName: z.string().min(1, 'Enter off-taker name'),
+  offTakerDescription: z.string().optional(),
+  supplierName: z.string().optional(),
+});
 export const activationFormSchema = z.object({ firstDay: billingDaySchema });
 export const invoiceFormSchema = z.object({
   report: addressSchema,
