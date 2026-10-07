@@ -10,4 +10,5 @@ test-ledger
 **/.env
 **/.env.*
 !**/.env.example
-**/data
+/data
+backend/data
