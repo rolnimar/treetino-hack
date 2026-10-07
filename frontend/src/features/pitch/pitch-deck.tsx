@@ -228,9 +228,10 @@ export function PitchDeck({
           >
             <source src="/video/hero-v1-cine-noaudio.webm" type="video/webm" />
           </video>
-          {/* Calibrated white overlay: solid white on the left text area, gentle fade so the 3D rotating kinetic tree shines through */}
-          <div className="absolute inset-0 bg-gradient-to-r from-white via-white/95 via-45% to-white/10" />
-          <div className="absolute inset-0 bg-gradient-to-t from-white via-white/50 to-transparent" />
+          {/* Balanced white overlay: video is clearly visible while typography remains 100% legible */}
+          <div className="absolute inset-0 bg-white/35" />
+          <div className="absolute inset-0 bg-gradient-to-r from-white/90 via-white/50 via-40% to-transparent" />
+          <div className="absolute bottom-0 left-0 right-0 h-64 bg-gradient-to-t from-white/90 via-white/60 to-transparent" />
         </div>
       )}
 
@@ -491,7 +492,7 @@ export function PitchDeck({
               <h2 className="text-8xl sm:text-9xl lg:text-[10rem] font-black tracking-tighter text-zinc-950 leading-none">
                 Treetino V1.
               </h2>
-              <p className="text-2xl sm:text-4xl font-bold text-zinc-600 tracking-tight max-w-4xl pt-2">
+              <p className="text-2xl sm:text-4xl font-bold text-zinc-600 tracking-tight max-w-2xl pt-2">
                 Patented kinetic solar &amp; micro-wind tree generating 49 kW of
                 clean power.
               </p>
