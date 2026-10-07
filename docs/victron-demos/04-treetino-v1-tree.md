@@ -1,7 +1,7 @@
 # 04. Treetino V1 · Biomimetic Smart Energy Tree (Dual-Modality DePIN)
 
 > **Asset Archetype**: Urban/Industrial Biomimetic Dual-Modality Microgrid (Solar Tracking Leaves + Ducted VAWT Wind Turbines + Trunk Storage + Micro-PPA).  
-> **Location**: Středočeský Region, Czech Republic (`50.0755° N, 14.4378° E`)  
+> **Location**: Central Bohemia Region, Czech Republic (`50.0755° N, 14.4378° E`)  
 > **Commercial Off-Taker**: MKovo s.r.o. (Precision CNC metal tooling workshop)  
 > **Tokenized Valuation**: $125,000 USDC · 125,000 Shares · **11.8% Projected APY**  
 

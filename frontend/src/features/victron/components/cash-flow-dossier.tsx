@@ -26,35 +26,40 @@ export function CashFlowDossier({
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
       {/* Left: Off-Taker / Commercial Counterparty Profile */}
-      <div className="rounded-xl border border-forest/15 bg-white p-5 shadow-xs space-y-4">
-        <div className="flex items-center justify-between border-b border-forest/10 pb-3">
+      <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-black/10 pb-3">
           <div>
-            <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+            <span className="text-xs font-semibold tracking-[0.2em] text-t-blue uppercase">
               Commercial Counterparty & Demand
             </span>
-            <h4 className="text-lg font-extrabold text-forest">
+            <h4 className="text-lg font-bold text-zinc-950 mt-1">
               {offTakerTitle}
             </h4>
           </div>
-          <span className="rounded-full bg-emerald-100 px-3 py-1 font-mono text-xs font-bold text-emerald-800 border border-emerald-300">
+          <span className="rounded-full bg-t-blue/10 px-3 py-1 font-mono text-xs font-bold text-t-blue">
             {offTakerBadge}
           </span>
         </div>
 
-        <p className="text-xs text-forest/70 leading-relaxed">
+        <p className="text-xs text-zinc-600 leading-relaxed">
           {offTakerDescription}
         </p>
 
         {keyDetails.length > 0 && (
           <div className="grid grid-cols-2 gap-3 text-xs font-mono">
             {keyDetails.map((item, idx) => (
-              <div key={idx} className="rounded-lg bg-forest/5 p-3">
-                <span className="text-forest/60 text-[10px]">{item.label}</span>
-                <div className="font-black text-forest text-sm mt-0.5">
+              <div
+                key={idx}
+                className="rounded-xl border border-black/5 bg-zinc-50 p-3"
+              >
+                <span className="text-zinc-400 text-[10px] uppercase">
+                  {item.label}
+                </span>
+                <div className="font-bold text-zinc-950 text-sm mt-0.5">
                   {item.value}
                 </div>
                 {item.subtext && (
-                  <span className="text-forest/60 text-[10px] block mt-0.5">
+                  <span className="text-zinc-500 text-[10px] block mt-0.5">
                     {item.subtext}
                   </span>
                 )}
@@ -65,12 +70,12 @@ export function CashFlowDossier({
       </div>
 
       {/* Right: Transparent Investor Cash Flow Waterfall */}
-      <div className="rounded-xl border border-forest/15 bg-white p-5 shadow-xs space-y-4">
-        <div className="border-b border-forest/10 pb-3">
-          <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-emerald-800">
+      <div className="rounded-2xl border border-black/10 bg-white p-6 shadow-xs space-y-4">
+        <div className="border-b border-black/10 pb-3">
+          <span className="text-xs font-semibold tracking-[0.2em] text-t-blue uppercase">
             Tokenized Cash Flow Waterfall
           </span>
-          <h4 className="text-lg font-extrabold text-forest">
+          <h4 className="text-lg font-bold text-zinc-950 mt-1">
             {grossRevenueTitle}
           </h4>
         </div>
@@ -79,19 +84,19 @@ export function CashFlowDossier({
           {waterfallSteps.map((step, idx) => (
             <div
               key={idx}
-              className="flex items-center justify-between rounded-lg border border-forest/10 bg-cream/30 p-2.5 text-xs font-mono"
+              className="flex items-center justify-between rounded-xl border border-black/5 bg-zinc-50/70 p-3 text-xs font-mono"
             >
               <div>
-                <span className="font-bold text-forest">{step.title}</span>
-                <div className="text-[11px] text-forest/60">
+                <span className="font-bold text-zinc-900">{step.title}</span>
+                <div className="text-[11px] text-zinc-500">
                   {step.description}
                 </div>
               </div>
               <div className="text-right">
-                <span className="font-black text-emerald-900">
+                <span className="font-bold text-t-blue text-sm">
                   {step.amount}
                 </span>
-                <div className="text-[10px] text-forest/50 font-bold">
+                <div className="text-[10px] text-zinc-400 font-semibold">
                   {step.percentage}
                 </div>
               </div>

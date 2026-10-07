@@ -63,7 +63,7 @@ export function PublicTrees({
       {query.isPending && <p>Loading trees…</p>}
       {query.data && (
         <>
-          <p className="text-sm text-forest/70">
+          <p className="text-sm text-zinc-500">
             {query.data.total} trees · Page {page + 1}
           </p>
           <div className="grid gap-5 lg:grid-cols-2">

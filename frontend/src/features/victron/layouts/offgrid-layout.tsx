@@ -40,7 +40,7 @@ export function OffgridLayout({ demo }: OffgridLayoutProps) {
   const batteryTrend = [98, 98.5, 99, 99.4, currentPower.batterySocPercent];
 
   return (
-    <div className="rounded-2xl border border-forest/15 bg-white/95 p-5 shadow-sm sm:p-7 space-y-6">
+    <div className="rounded-3xl border border-black/10 bg-white p-6 sm:p-8 shadow-xs space-y-6">
       {/* 1. REUSABLE INSTALLATION HEADER */}
       <InstallationHeader
         demo={demo}
@@ -84,7 +84,7 @@ export function OffgridLayout({ demo }: OffgridLayoutProps) {
       {/* 4. SCHEMATIC CANVAS + UNCOUPLED TELEMETRY SIDEPANEL */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
         {/* LEFT 9 COLS: ELECTRICAL CIRCUIT SCHEMATIC CANVAS */}
-        <div className="xl:col-span-9 overflow-x-auto rounded-2xl border border-forest/15 bg-[#fbfaf7] p-3 sm:p-5 flex items-center">
+        <div className="xl:col-span-9 overflow-x-auto rounded-3xl border border-black/10 bg-zinc-50/50 p-4 sm:p-6 flex items-center shadow-xs">
           <svg
             viewBox="0 0 770 420"
             className="w-full h-auto min-w-[680px] select-none"
@@ -158,7 +158,7 @@ export function OffgridLayout({ demo }: OffgridLayoutProps) {
               x={30}
               y={30}
               accent="forest"
-              icon={<GridIcon className="h-4 w-4 text-forest/70" />}
+              icon={<GridIcon className="h-4 w-4 text-zinc-600" />}
               title="Generator"
               badge={demo.systemInfo.generatorState || 'Stopped'}
               primaryValue="—"
@@ -169,9 +169,9 @@ export function OffgridLayout({ demo }: OffgridLayoutProps) {
 
             {/* Card 1.2: INVERTER HUB (Multi RS Smart) */}
             <foreignObject x={320} y={30} width={170} height={160}>
-              <div className="h-full w-full rounded-2xl border-2 border-forest/20 bg-cream/90 shadow-md flex flex-col justify-between overflow-hidden text-center select-none">
-                <div className="bg-forest py-2 text-white">
-                  <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-white/10 font-mono text-xs font-black">
+              <div className="h-full w-full rounded-2xl border-2 border-black/10 bg-white shadow-md flex flex-col justify-between overflow-hidden text-center select-none">
+                <div className="bg-t-blue py-2 text-white">
+                  <div className="mx-auto flex h-8 w-8 items-center justify-center rounded-lg bg-white/20 font-mono text-xs font-black">
                     RS
                   </div>
                   <div className="mt-1 font-mono text-[10px] font-bold tracking-tight text-white/90">
@@ -179,14 +179,14 @@ export function OffgridLayout({ demo }: OffgridLayoutProps) {
                   </div>
                 </div>
                 <div className="p-2 flex flex-col items-center justify-center">
-                  <span className="rounded-full bg-forest/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-forest">
+                  <span className="rounded-full bg-t-blue/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-t-blue">
                     Mode: {demo.systemInfo.systemState}
                   </span>
-                  <div className="mt-1 font-mono text-xs font-extrabold text-emerald-800">
+                  <div className="mt-1 font-mono text-xs font-extrabold text-t-blue">
                     {financials.projectedApy}% APY
                   </div>
                 </div>
-                <div className="bg-white/80 py-1 font-mono text-[9px] text-forest/60 border-t border-forest/10">
+                <div className="bg-zinc-50 py-1 font-mono text-[9px] text-zinc-500 border-t border-black/10">
                   Off-Grid Controller
                 </div>
               </div>
@@ -247,17 +247,17 @@ export function OffgridLayout({ demo }: OffgridLayoutProps) {
             specialtyTitle="Diesel Replacement"
             specialtyBadge="Clean Equity"
             specialtyContent={
-              <div className="space-y-1.5 text-[10px] font-mono text-forest/80">
+              <div className="space-y-1.5 text-[10px] font-mono text-zinc-600">
                 <div className="flex justify-between items-center">
                   <span>Daily Fuel Savings:</span>
-                  <strong className="text-emerald-800 text-xs">
+                  <strong className="text-emerald-700 text-xs">
                     +${dailyDisplacedSavings} / day
                   </strong>
                 </div>
-                <div className="text-forest/60">
+                <div className="text-zinc-500">
                   100% clean solar microgrid operation
                 </div>
-                <div className="border-t border-forest/10 pt-1 text-forest/50">
+                <div className="border-t border-black/10 pt-1 text-zinc-400">
                   Displacing $1.40/L generator fuel cost
                 </div>
               </div>

@@ -22,9 +22,9 @@ export function TreeRewards({
   return (
     <section
       aria-label="Investor rewards"
-      className="mt-5 rounded-lg border border-forest/15 bg-leaf/10 p-4"
+      className="mt-5 rounded-2xl border border-sky-200 bg-sky-50/70 p-4"
     >
-      <h3 className="font-semibold">Your investor rewards</h3>
+      <h3 className="font-bold text-zinc-950">Your investor rewards</h3>
       {!wallet ? (
         <Button className="mt-3" onClick={() => setVisible(true)}>
           Connect wallet to view rewards
@@ -34,7 +34,7 @@ export function TreeRewards({
           <p
             role="status"
             aria-label="Claimable yield"
-            className="my-2 text-xl font-bold"
+            className="my-2 text-xl font-black text-t-blue"
           >
             {rewards.isError
               ? 'Rewards unavailable'
@@ -44,7 +44,7 @@ export function TreeRewards({
           </p>
           <ErrorMessage error={rewards.error} />
           {state && !rewards.isError && (
-            <p className="mb-3 text-sm text-forest/75">
+            <p className="mb-3 text-sm text-zinc-600">
               {!state.hasPosition
                 ? 'This wallet has no investment in this tree.'
                 : !state.active

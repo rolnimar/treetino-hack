@@ -1,20 +1,22 @@
 export function ErrorMessage({ error }: { error: Error | null | undefined }) {
   return error ? (
-    <p
+    <div
       role="alert"
-      className="my-3 rounded-md bg-red-50 p-3 text-sm text-red-800 break-words"
+      className="my-3 rounded-xl border border-rose-200 bg-rose-50/80 p-3.5 text-xs text-rose-800 break-words shadow-2xs"
     >
+      <span className="font-semibold">Error: </span>
       {error.message}
-    </p>
+    </div>
   ) : null;
 }
+
 export function AddressLink({ address }: { address: string }) {
   return (
     <a
       href={`https://solscan.io/account/${address}?cluster=devnet`}
       target="_blank"
       rel="noreferrer"
-      className="block text-xs text-forest/75 underline decoration-forest/25 break-all hover:text-forest"
+      className="block font-mono text-xs text-t-blue/80 underline decoration-t-blue/30 break-all transition hover:text-t-accent hover:decoration-t-accent"
     >
       {address}
     </a>

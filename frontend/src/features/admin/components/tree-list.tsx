@@ -44,7 +44,7 @@ export function TreeList() {
       {query.isPending && <p>Loading trees from backend…</p>}
       {query.data && (
         <>
-          <p className="text-sm text-forest/70">
+          <p className="text-sm text-zinc-500">
             {query.data.total} trees · Page {page + 1}
           </p>
           {query.data.trees.length ? (
@@ -76,7 +76,7 @@ export function TreeList() {
           </div>
         </>
       )}
-      <p className="text-xs text-forest/70">
+      <p className="text-xs text-zinc-500">
         Trees come from the backend’s confirmed indexer and refresh every 10
         seconds.
       </p>

@@ -43,8 +43,8 @@ function Workspace() {
     <div className="my-6 space-y-5">
       <div className="flex items-center justify-between gap-3">
         <div>
-          <h3 className="font-bold">Devnet management</h3>
-          <p className="text-sm text-forest/70">
+          <h3 className="font-bold text-zinc-950">Devnet management</h3>
+          <p className="text-sm text-zinc-500">
             {setup.data
               ? `${Number(setup.data.balanceLamports) / 1e9} SOL`
               : 'Reading protocol setup…'}
@@ -78,7 +78,10 @@ function Workspace() {
       <ErrorMessage error={setup.error} />
       <ErrorMessage error={transaction.error} />
       {(transaction.isPending || transaction.isSuccess) && (
-        <p role="status" className="rounded-md bg-leaf/15 p-3 text-sm">
+        <p
+          role="status"
+          className="rounded-xl border border-sky-200 bg-sky-50 p-3 text-sm text-t-blue font-medium"
+        >
           {transaction.isPending
             ? transaction.signature
               ? 'Submitted. Waiting for chain confirmation…'
@@ -88,7 +91,7 @@ function Workspace() {
       )}
       {transaction.signature && (
         <a
-          className="text-sm underline break-all"
+          className="text-sm underline break-all text-t-blue hover:text-t-accent"
           target="_blank"
           rel="noreferrer"
           href={`https://solscan.io/tx/${transaction.signature}?cluster=devnet`}

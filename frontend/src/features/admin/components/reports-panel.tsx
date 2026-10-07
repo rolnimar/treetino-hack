@@ -24,7 +24,7 @@ export function ReportsPanel({ tree }: { tree: IndexedTree }) {
         report.pricing,
     ) ?? [];
   return (
-    <div className="space-y-4 border-t border-forest/15 pt-4">
+    <div className="space-y-4 border-t border-black/10 pt-4">
       <Button
         variant="secondary"
         disabled={query.isFetching}
@@ -44,7 +44,7 @@ export function ReportsPanel({ tree }: { tree: IndexedTree }) {
             {query.data.reports.map((report) => (
               <div
                 key={report.address}
-                className="rounded-md border border-forest/15 p-3"
+                className="rounded-xl border border-black/10 p-3 bg-zinc-50"
               >
                 <ReportDetails report={report} />
               </div>
@@ -152,7 +152,7 @@ function InvoiceForm({
           {...register('amount')}
           error={errors.amount?.message}
         />
-        <p className="text-xs text-forest/70">
+        <p className="text-xs text-zinc-500">
           Prefilled from the backend’s 15-minute spot-price calculation. Review
           before signing; the final amount cannot be changed once issued. Zero
           is allowed.

@@ -43,7 +43,7 @@ export function EvLayout({ demo }: EvLayoutProps) {
   const solarTrend = demo.hourlyData.map((d) => d.solarKwh);
 
   return (
-    <div className="rounded-2xl border border-forest/15 bg-white/95 p-5 shadow-sm sm:p-7 space-y-6">
+    <div className="rounded-3xl border border-black/10 bg-white p-6 sm:p-8 shadow-xs space-y-6">
       {/* 1. REUSABLE INSTALLATION HEADER */}
       <InstallationHeader
         demo={demo}
@@ -86,9 +86,8 @@ export function EvLayout({ demo }: EvLayoutProps) {
 
       {/* 4. SCHEMATIC CANVAS + UNCOUPLED TELEMETRY SIDEPANEL */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
-        {/* LEFT 9 COLS: ELECTRICAL CIRCUIT SCHEMATIC CANVAS (Exact Replica of media_1791148416810.png) */}
         <div className="xl:col-span-9 space-y-4">
-          <div className="overflow-x-auto rounded-2xl border border-forest/15 bg-[#fbfaf7] p-3 sm:p-5 flex items-center">
+          <div className="overflow-x-auto rounded-3xl border border-black/10 bg-zinc-50/50 p-4 sm:p-6 flex items-center shadow-xs">
             <svg
               viewBox="0 0 770 745"
               className="w-full h-auto min-w-[720px] select-none"
@@ -304,12 +303,12 @@ export function EvLayout({ demo }: EvLayoutProps) {
 
               {/* Card 2.2: QUATTRO INVERTER HUB */}
               <foreignObject x={280} y={205} width={210} height={150}>
-                <div className="h-full w-full rounded-2xl border-2 border-forest bg-forest text-cream p-3.5 shadow-md flex flex-col justify-between overflow-hidden select-none">
+                <div className="h-full w-full rounded-2xl border-2 border-black/10 bg-t-blue text-white p-3.5 shadow-md flex flex-col justify-between overflow-hidden select-none">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-leaf">
+                    <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-sky-200">
                       48V
                     </span>
-                    <span className="rounded bg-cream/15 px-2 py-0.5 font-mono text-[9px] font-bold text-cream">
+                    <span className="rounded bg-white/20 px-2 py-0.5 font-mono text-[9px] font-bold text-white">
                       Quattro 48/10000
                     </span>
                   </div>
@@ -317,11 +316,11 @@ export function EvLayout({ demo }: EvLayoutProps) {
                     <div className="font-mono text-base font-black text-white">
                       Bulk · 140A
                     </div>
-                    <div className="mt-0.5 font-mono text-xs font-extrabold text-leaf">
+                    <div className="mt-0.5 font-mono text-xs font-extrabold text-sky-200">
                       {financials.projectedApy}% APY Yield
                     </div>
                   </div>
-                  <div className="border-t border-cream/15 pt-1 font-mono text-[10px] text-cream/70 text-center">
+                  <div className="border-t border-white/20 pt-1 font-mono text-[10px] text-white/80 text-center">
                     Plaza Fast-Charging Hub
                   </div>
                 </div>
@@ -334,7 +333,7 @@ export function EvLayout({ demo }: EvLayoutProps) {
                 width={210}
                 height={150}
                 accent="forest"
-                icon={<EvChargerIcon className="h-4 w-4 text-forest/70" />}
+                icon={<EvChargerIcon className="h-4 w-4 text-zinc-600" />}
                 title="EVCS Bay #2"
                 badge="Standby"
                 primaryValue="EV Ready"
@@ -421,13 +420,13 @@ export function EvLayout({ demo }: EvLayoutProps) {
           </div>
 
           {/* 10-BAY COMMERCIAL FAST-CHARGING PLAZA STATUS GRID */}
-          <div className="rounded-2xl border border-forest/15 bg-white p-5 shadow-xs space-y-3">
-            <div className="flex items-center justify-between border-b border-forest/10 pb-3">
+          <div className="rounded-3xl border border-black/10 bg-white p-5 shadow-xs space-y-3">
+            <div className="flex items-center justify-between border-b border-black/10 pb-3">
               <div>
-                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-forest/70">
+                <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-zinc-500">
                   Dispenser Array
                 </span>
-                <h4 className="text-base font-bold text-forest">
+                <h4 className="text-base font-bold text-zinc-950">
                   10x Commercial Fast-Charging Bays (32A Three-Phase Plaza)
                 </h4>
               </div>
@@ -451,28 +450,26 @@ export function EvLayout({ demo }: EvLayoutProps) {
               ].map((item) => (
                 <div
                   key={item.bay}
-                  className={`rounded-xl border p-3 flex flex-col justify-between ${
+                  className={`rounded-2xl border p-3 flex flex-col justify-between ${
                     item.active
-                      ? 'border-sky-400 bg-sky-50/80 shadow-2xs'
-                      : 'border-forest/10 bg-forest/5'
+                      ? 'border-sky-300 bg-sky-50/80 shadow-xs'
+                      : 'border-black/10 bg-zinc-50'
                   }`}
                 >
                   <div className="flex items-center justify-between text-[11px] font-mono">
-                    <span className="font-bold text-forest">
+                    <span className="font-bold text-zinc-900">
                       Bay #{item.bay}
                     </span>
                     <span
                       className={`h-2 w-2 rounded-full ${
-                        item.active
-                          ? 'bg-sky-500 animate-pulse'
-                          : 'bg-forest/30'
+                        item.active ? 'bg-sky-500 animate-pulse' : 'bg-zinc-300'
                       }`}
                     />
                   </div>
-                  <div className="my-1.5 font-mono text-sm font-black text-forest">
+                  <div className="my-1.5 font-mono text-sm font-black text-zinc-950">
                     {item.kw}
                   </div>
-                  <div className="text-[10px] font-mono text-forest/70">
+                  <div className="text-[10px] font-mono text-zinc-500">
                     {item.active ? 'Session in progress' : 'Ready to plug'}
                   </div>
                 </div>
@@ -488,19 +485,19 @@ export function EvLayout({ demo }: EvLayoutProps) {
             specialtyTitle="Plaza IoT & RuuviTag"
             specialtyBadge="10 Bays"
             specialtyContent={
-              <div className="space-y-1.5 text-[10px] font-mono text-forest/80">
+              <div className="space-y-1.5 text-[10px] font-mono text-zinc-600">
                 <div className="flex justify-between items-center">
                   <span>Environmental Probe:</span>
-                  <strong className="text-emerald-800 text-xs">
+                  <strong className="text-emerald-700 text-xs">
                     {demo.systemInfo.temperatureProbeCelsius ?? 36.2} °C
                   </strong>
                 </div>
-                <div className="text-forest/60">
+                <div className="text-zinc-500">
                   RuuviTag wireless environmental probe (TEST PARTER)
                 </div>
-                <div className="border-t border-forest/10 pt-1 flex justify-between items-center text-forest/60">
+                <div className="border-t border-black/10 pt-1 flex justify-between items-center text-zinc-500">
                   <span>Charging Protocol:</span>
-                  <span className="font-bold text-emerald-800">
+                  <span className="font-bold text-emerald-700">
                     M2M Billing
                   </span>
                 </div>

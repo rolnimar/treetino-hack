@@ -30,36 +30,38 @@ export function TreeCard({ tree }: { tree: IndexedTree }) {
       title={`Tree #${tree.treeId}${campaign ? ` · ${campaign.title}` : ''}`}
     >
       <div className="mb-3 flex items-center gap-3">
-        <span className="rounded-full bg-leaf/15 px-3 py-1 text-xs font-medium">
+        <span className="rounded-full bg-sky-100 text-t-blue px-3 py-1 text-xs font-semibold">
           {tree.phase}
         </span>
-        <span className="text-xs text-forest/60">
+        <span className="text-xs text-zinc-500">
           Indexed {new Date(tree.updatedAt).toLocaleString()}
         </span>
       </div>
 
       {campaign && (
-        <div className="mb-4 rounded-xl border border-forest/15 bg-forest/5 p-4 text-xs">
+        <div className="mb-4 rounded-2xl border border-black/10 bg-zinc-50 p-4 text-xs">
           <div className="flex flex-wrap items-center justify-between gap-2">
-            <span className="font-mono font-bold text-forest uppercase">
+            <span className="font-mono font-bold text-zinc-700 uppercase">
               {campaign.categoryBadge} · {campaign.city}, {campaign.country}
             </span>
-            <span className="font-mono font-extrabold text-emerald-800">
+            <span className="font-mono font-extrabold text-t-blue">
               {campaign.projectedApy} APY
             </span>
           </div>
-          <p className="mt-1 text-forest/75">{campaign.narrative}</p>
-          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-forest/10 pt-2 font-mono text-[11px]">
+          <p className="mt-1 text-zinc-600">{campaign.narrative}</p>
+          <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2 border-t border-black/10 pt-2 font-mono text-[11px] text-zinc-500">
             <span>
-              Off-Taker: <strong>{campaign.offTakerName}</strong>
+              Off-Taker:{' '}
+              <strong className="text-zinc-900">{campaign.offTakerName}</strong>
             </span>
             <span>
-              Tariff: <strong>{campaign.tariffRate}</strong>
+              Tariff:{' '}
+              <strong className="text-zinc-900">{campaign.tariffRate}</strong>
             </span>
             {campaign.victronSiteId && (
               <a
                 href={`#asset/${campaign.victronSiteId}`}
-                className="text-leaf font-bold hover:underline"
+                className="text-t-blue font-bold hover:underline"
               >
                 Inspect Live Hardware & Telemetry ↗
               </a>
@@ -71,32 +73,32 @@ export function TreeCard({ tree }: { tree: IndexedTree }) {
       <AddressLink address={tree.address} />
       <dl className="my-5 grid gap-4 text-sm sm:grid-cols-2">
         <div>
-          <dt className="text-forest/60">Funding</dt>
+          <dt className="text-zinc-500">Funding</dt>
           <dd>
             {formatTokenAmount(tree.raised)} / {formatTokenAmount(tree.target)}{' '}
             mockUSDC
           </dd>
         </div>
         <div>
-          <dt className="text-forest/60">Creator</dt>
+          <dt className="text-zinc-500">Creator</dt>
           <dd>
             <AddressLink address={tree.creator} />
           </dd>
         </div>
         <div>
-          <dt className="text-forest/60">Supplier</dt>
+          <dt className="text-zinc-500">Supplier</dt>
           <dd>
             <AddressLink address={tree.supplier} />
           </dd>
         </div>
         <div>
-          <dt className="text-forest/60">Client</dt>
+          <dt className="text-zinc-500">Client</dt>
           <dd>
             <AddressLink address={tree.client} />
           </dd>
         </div>
         <div>
-          <dt className="text-forest/60">Reporter</dt>
+          <dt className="text-zinc-500">Reporter</dt>
           <dd>
             <AddressLink address={tree.reporter} />
           </dd>
@@ -104,7 +106,7 @@ export function TreeCard({ tree }: { tree: IndexedTree }) {
       </dl>
       <MockReporterStatus tree={tree} />
       {!mine && (
-        <p className="mb-3 text-sm text-forest/70">
+        <p className="mb-3 text-sm text-zinc-500">
           Lifecycle actions require this tree’s creator wallet.
         </p>
       )}

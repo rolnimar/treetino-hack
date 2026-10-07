@@ -29,8 +29,8 @@ export function TreeInvoices({
   const [page, setPage] = useState(0);
   const query = useTreeReports(tree.address, page, open, clientSession);
   return (
-    <div className="mt-5 space-y-3 border-t border-forest/15 pt-4">
-      <p className="text-xs text-forest/65">Client wallet</p>
+    <div className="mt-5 space-y-3 border-t border-black/10 pt-4">
+      <p className="text-xs text-zinc-500">Client wallet</p>
       <AddressLink address={tree.client} />
       <Button variant="secondary" onClick={() => setOpen(!open)}>
         {open ? 'Hide' : 'View'} production & invoices
@@ -47,7 +47,7 @@ export function TreeInvoices({
                 {query.data.total} reports · Page {page + 1}
               </p>
               {!query.data.reports.length && (
-                <p className="text-sm text-forest/70">
+                <p className="text-sm text-zinc-500">
                   No completed daily reports have been indexed yet.
                 </p>
               )}
@@ -61,7 +61,7 @@ export function TreeInvoices({
                 return (
                   <div
                     key={report.address}
-                    className="space-y-3 rounded-md border border-forest/15 p-3"
+                    className="space-y-3 rounded-xl border border-black/10 bg-zinc-50 p-3"
                   >
                     <ReportDetails report={report} />
                     {canPay && (
@@ -81,14 +81,14 @@ export function TreeInvoices({
                       </>
                     )}
                     {report.invoiceIssued && remaining === 0n && (
-                      <p className="text-sm font-medium text-leaf">
+                      <p className="text-sm font-bold text-emerald-700">
                         Invoice settled
                       </p>
                     )}
                     {report.invoiceIssued &&
                       remaining > 0n &&
                       wallet !== tree.client && (
-                        <p className="text-xs text-forest/65">
+                        <p className="text-xs text-zinc-500">
                           Connect the client wallet to pay this invoice.
                         </p>
                       )}

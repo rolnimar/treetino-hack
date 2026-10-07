@@ -74,57 +74,64 @@ const SITE_METADATA = {
   },
   219742: {
     key: 'ess' as const,
-    title: 'Commercial ESS Battery Storage',
-    category: 'Grid Flexibility · High-Yield Arbitrage',
-    categoryBadge: 'Battery Storage (BESS)',
+    title: 'BESS Přeštice 8.6 MW (WATTINO hBESS)',
+    category: 'Grid Flexibility · ČEPS SVR + Spot Arbitrage',
+    categoryBadge: 'BESS 8.6 MW · Ancillary + Spot',
     narrative:
-      'Commercial grid-tied battery storage system (BESS). Solves renewable intermittency by charging during negative/low-cost solar hours and discharging during peak tariff windows, capturing premium grid balancing revenue.',
+      'High-capacity 8.6 MW / 10.0–17.2 MWh battery energy storage system (BESS) directly connected to the 110/22 kV Přeštice substation. Monetizes automated grid frequency containment (ČEPS SVR) and algorithmic day-ahead/intraday spot power arbitrage.',
     investorHighlight:
-      'High-yield infrastructure monetizing wholesale peak arbitrage spreads and national grid frequency response.',
-    projectedApy: '14.2%',
-    suggestedTargetUsdc: '50000',
+      'High-yield grid infrastructure with 2 signed utility connection contracts, 4.2y payback (2.95y w/ subsidy), 21.8%–31.5% IRR, and 10-year EU replacement warranty.',
+    projectedApy: '21.8%',
+    suggestedTargetUsdc: '108000',
     location: {
-      city: 'Amsterdam',
-      country: 'Netherlands',
-      latitude: 52.3629,
-      longitude: 4.89298,
-      timezone: 'Europe/Amsterdam',
+      city: 'Dolni Lukavice (Prestice)',
+      country: 'Czech Republic',
+      latitude: 49.6192,
+      longitude: 13.3414,
+      timezone: 'Europe/Prague',
     },
     financials: {
-      targetUsdc: 50000,
-      fundedUsdc: 42100,
-      fundedPercent: 84.2,
+      targetUsdc: 108000,
+      fundedUsdc: 84200,
+      fundedPercent: 78.0,
       sharePriceUsdc: 1.0,
-      totalShares: 50000,
-      projectedApy: 14.2,
-      estDailyRevenueUsdc: 19.45,
-      estMonthlyRevenueUsdc: 591.67,
-      estAnnualRevenueUsdc: 7100.0,
+      totalShares: 108000,
+      projectedApy: 21.8,
+      estDailyRevenueUsdc: 295.4,
+      estMonthlyRevenueUsdc: 8980.0,
+      estAnnualRevenueUsdc: 108000.0,
       tariffRate:
-        '$0.35 / kWh peak discharge spread + €45/MW/h grid frequency reserve',
+        '2× Signed Connection Agreements (#4122602318 & #4122623464) · ČEPS Ancillary + OTE Arbitrage',
       revenueModelDescription:
-        'Dual-income model: dynamic wholesale power market arbitrage plus contracted automated grid balancing capacity payments.',
+        'Dual-income model: 60–70% ČEPS frequency regulation capacity & activation + 30–40% OTE day-ahead & 15-min intraday power arbitrage.',
       cashFlowWaterfall: [
         {
-          title: 'Gross Energy & Balancing Revenue',
+          title: 'Gross Annual Revenue (Ancillary + Spot)',
           percentage: '100%',
-          amount: '$7,100.00 / yr',
+          amount: '€1.24M / yr ($1.35M / 30.94M CZK)',
           description:
-            'Day-ahead spot market price arbitrage + grid frequency stabilization rewards',
+            'ČEPS capacity & activation (€860k / 21.5M CZK) + OTE day-ahead & intraday arbitrage (€380k / 9.44M CZK)',
         },
         {
-          title: 'Grid Connection & Management Fee',
-          percentage: '7%',
-          amount: '-$497.00 / yr',
+          title: 'Aggregator & Trader Revenue Share',
+          percentage: '12%',
+          amount: '-€148k / yr (-3.71M CZK)',
           description:
-            'Transmission operator interconnection fee and automated algorithmic bidding',
+            '12% success-fee for automated market bidding, forecasting, and ČEPS dispatching',
         },
         {
-          title: 'Net Investor Distribution',
-          percentage: '93%',
-          amount: '$6,603.00 / yr',
+          title: 'Direct Operating Expenses (OPEX)',
+          percentage: '5.3%',
+          amount: '-€65k / yr (-1.63M CZK)',
           description:
-            'Quarterly and real-time yield distributions streamed to BESS share holders',
+            'Preventive service, land lease, insurance, 500L compressor-less thermal buffer management (~1.5% CAPEX)',
+        },
+        {
+          title: 'Clean Annual Operating Profit (EBITDA)',
+          percentage: '82.7%',
+          amount: '€1.02M / yr ($1.11M / 25.6M CZK)',
+          description:
+            'Net annual cash flow distributed to project equity and tokenized investors (Var. A Realistic)',
         },
       ],
     },
@@ -198,7 +205,7 @@ const SITE_METADATA = {
     projectedApy: '12.8%',
     suggestedTargetUsdc: '235000',
     location: {
-      city: 'Prague / Středočeský',
+      city: 'Prague / Central Bohemia',
       country: 'Czech Republic',
       latitude: 50.0755,
       longitude: 14.4378,
@@ -877,53 +884,51 @@ export class VictronService {
     if (siteId === 219742) {
       return [
         {
-          name: 'Gateway',
-          modelName: 'Cerbo-S GX',
-          productName: 'Cerbo-S GX',
-          firmwareVersion: 'v3.80',
+          name: 'SCADA Controller & Gateway',
+          modelName: 'Cerbo-S GX Industrial (Venus OS)',
+          productName: 'WATTINO SCADA Gateway',
+          firmwareVersion: 'v3.82-ind',
           deviceType: 'gateway',
         },
         {
-          name: 'VE.Bus Inverter',
-          modelName: 'MultiPlus-II 48/3000/35-32 (50A ext sensor)',
-          productName: 'MultiPlus-II',
+          name: 'AI EMS Energy Management Dispatcher',
+          modelName: 'WATTINO AI EMS Cloud Node',
+          productName: 'WATTINO AI EMS (SVR + Spot)',
+          firmwareVersion: 'v2.4.1',
+          deviceType: 'gateway',
+        },
+        {
+          name: 'BESS Power Conversion Inverters',
+          modelName: 'WATTINO PCS 100/200 kW Bi-directional Array (50 Units)',
+          productName: 'WATTINO PCS Inverter',
           deviceType: 'inverter',
         },
         {
-          name: 'Battery Monitor',
-          modelName: 'Pylontech battery 48V',
-          productName: 'Pylontech US3000C',
+          name: 'Automotive Lithium Battery Modules',
+          modelName:
+            'Samsung SDI Hungary NCM 622 Automotive (10.0 MWh - 50 Cabinets)',
+          productName: 'Samsung SDI NCM 622 (4C Rated)',
           deviceType: 'battery',
         },
         {
-          name: 'Solar Charger',
-          modelName: 'SmartSolar Charger VE.Can 150/70',
-          productName: 'SmartSolar MPPT',
-          deviceType: 'charger',
-        },
-        {
-          name: 'Solar Charger',
-          modelName: 'SmartSolar MPPT RS 450/100',
-          productName: 'SmartSolar RS',
-          deviceType: 'charger',
-        },
-        {
-          name: 'Solar Charger',
-          modelName: 'SmartSolar MPPT RS 450/200',
-          productName: 'SmartSolar RS',
-          deviceType: 'charger',
-        },
-        {
-          name: 'PV Inverter',
-          modelName: 'Fronius Primo 5.0-1',
-          productName: 'Fronius PV Inverter',
-          deviceType: 'pv_inverter',
-        },
-        {
-          name: 'Grid Meter',
-          modelName: 'Carlo Gavazzi ET340 3-Phase Energy Meter',
-          productName: 'ET340',
+          name: 'HV/MV Substation Interconnection',
+          modelName:
+            'Transformer Station 0.4 / 22 kV (ČEZ Distribuce SOP #4122602318)',
+          productName: 'Transformer 0.4/22 kV & MV Switchgear',
           deviceType: 'grid_meter',
+        },
+        {
+          name: 'Thermal Buffer Management',
+          modelName: 'WATTINO 500L Thermal Energy Accumulator (-25°C to +45°C)',
+          productName: 'Liquid Thermal Management System',
+          deviceType: 'charger',
+        },
+        {
+          name: 'Fire Protection & Safety System',
+          modelName:
+            'A1 Class Mineral Insulation (100mm) + Aerosol Fire Suppression',
+          productName: 'Integrated Fire Safety System',
+          deviceType: 'safety',
         },
       ];
     }
@@ -1067,23 +1072,23 @@ export class VictronService {
       });
     }
     if (siteId === 219742) {
-      // ESS bell curve
-      const solarProfile = [
-        0, 0, 0, 0, 0, 0.1, 0.4, 1.2, 2.5, 4.1, 5.8, 6.2, 6.0, 5.2, 3.8, 2.4,
-        1.1, 0.5, 0.1, 0, 0, 0, 0, 0,
-      ];
-      const loadProfile = [
-        0.3, 0.3, 0.2, 0.2, 0.3, 0.5, 0.9, 1.4, 1.1, 0.9, 0.8, 0.9, 1.0, 1.1,
-        1.0, 1.2, 1.5, 1.8, 2.1, 1.9, 1.4, 0.8, 0.5, 0.4,
+      // BESS Přeštice 8.6 MW: SVR + Spot Co-optimized Stacking Profile (Slide 9)
+      // 00:00-05:00: Night charging + aFRR-
+      // 07:00-09:00: Morning peak discharge + SVR
+      // 11:00-15:00: Midday solar oversupply charging (negative prices)
+      // 17:00-21:00: Evening peak discharge + aFRR+ (180-320+ EUR/MWh)
+      const chargeProfile = [
+        3.2, 3.8, 4.1, 3.6, 2.8, 0.4, 0, 0, 0, 0.2, 0.8, 4.5, 6.2, 5.8, 4.2,
+        0.5, 0, 0, 0, 0, 0, 0.2, 1.4, 2.5,
       ];
       const exportProfile = [
-        0, 0, 0, 0, 0, 0, 0, 0.5, 1.2, 2.6, 4.1, 4.5, 4.2, 3.4, 2.1, 0.9, 0.2,
-        0, 0, 0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0, 0.5, 2.8, 5.9, 5.4, 1.2, 0, 0, 0, 0, 0, 0, 1.2, 4.8, 6.2,
+        6.2, 5.1, 2.4, 0.5, 0,
       ];
       return hours.map((hourLabel, i) => ({
         hourLabel,
-        solarKwh: solarProfile[i]!,
-        consumptionKwh: loadProfile[i]!,
+        solarKwh: 0,
+        consumptionKwh: chargeProfile[i]!,
         gridExportKwh: exportProfile[i]!,
       }));
     }

@@ -17,13 +17,13 @@ export function IntervalChart({
   const [selected, setSelected] = useState<number | null>(null);
   if (!points.length)
     return (
-      <p className="text-xs text-forest/65">
+      <p className="text-xs text-zinc-500">
         {title}: no interval readings were submitted.
       </p>
     );
   if (points.some(({ value }) => !Number.isFinite(value)))
     return (
-      <p className="text-xs text-forest/65">{title}: chart data unavailable.</p>
+      <p className="text-xs text-zinc-500">{title}: chart data unavailable.</p>
     );
   const lower = points.reduce((min, point) => Math.min(min, point.value), 0);
   const upper = points.reduce((max, point) => Math.max(max, point.value), 0);
@@ -37,17 +37,17 @@ export function IntervalChart({
     ...new Set([0, Math.floor((points.length - 1) / 2), points.length - 1]),
   ];
   return (
-    <figure className="rounded-md border border-forest/15 bg-white/60 p-3">
+    <figure className="rounded-xl border border-black/10 bg-zinc-50/60 p-3">
       <figcaption className="mb-3 flex flex-wrap justify-between gap-2 text-xs">
-        <span className="font-semibold">{title}</span>
-        <span className="text-forest/65">
+        <span className="font-semibold text-zinc-900">{title}</span>
+        <span className="text-zinc-500">
           {unit} · UTC · {points.length} intervals
         </span>
       </figcaption>
       <div className="relative pl-12">
         <div
           aria-hidden="true"
-          className="absolute inset-y-0 left-0 flex w-10 flex-col justify-between pb-2 text-right text-[10px] text-forest/65"
+          className="absolute inset-y-0 left-0 flex w-10 flex-col justify-between pb-2 text-right text-[10px] text-zinc-500"
         >
           {[ceiling, lower + span / 2, lower].map((value, index) => (
             <span key={index}>{number.format(value)}</span>
@@ -59,7 +59,7 @@ export function IntervalChart({
           tabIndex={0}
           viewBox="0 0 600 160"
           preserveAspectRatio="none"
-          className="h-40 w-full touch-pan-y outline-offset-2 focus-visible:outline-leaf"
+          className="h-40 w-full touch-pan-y outline-offset-2 focus-visible:outline-t-blue"
           onPointerMove={(event) => {
             const bounds = event.currentTarget.getBoundingClientRect();
             setSelected(
@@ -124,7 +124,7 @@ export function IntervalChart({
               y1={height}
               y2={height}
               stroke="currentColor"
-              className="text-forest/15"
+              className="text-black/10"
               vectorEffect="non-scaling-stroke"
             />
           ))}
@@ -135,7 +135,7 @@ export function IntervalChart({
               y1={y(0)}
               y2={y(0)}
               stroke="currentColor"
-              className="text-forest/40"
+              className="text-black/20"
               strokeDasharray="4 4"
               vectorEffect="non-scaling-stroke"
             />
@@ -146,7 +146,7 @@ export function IntervalChart({
               .join(' ')}
             fill="none"
             stroke="currentColor"
-            className="text-leaf"
+            className="text-t-blue"
             strokeWidth="2"
             vectorEffect="non-scaling-stroke"
           />
@@ -156,20 +156,20 @@ export function IntervalChart({
               cy={y((active ?? points[0]!).value)}
               r="4"
               fill="currentColor"
-              className="text-forest"
+              className="text-t-accent"
             />
           )}
         </svg>
         <div
           aria-hidden="true"
-          className="mt-1 flex justify-between text-[10px] text-forest/65"
+          className="mt-1 flex justify-between text-[10px] text-zinc-500"
         >
           {ticks.map((index) => (
             <span key={index}>{time(points[index]!.startTs)}</span>
           ))}
         </div>
       </div>
-      <p role="status" className="mt-3 min-h-8 text-xs text-forest/75">
+      <p role="status" className="mt-3 min-h-8 text-xs text-zinc-600">
         {active
           ? `${new Date(Number(active.startTs) * 1000).toISOString().slice(0, 16).replace('T', ' ')} UTC · ${active.value} ${unit}`
           : 'Hover, tap, or use arrow keys to inspect an interval.'}

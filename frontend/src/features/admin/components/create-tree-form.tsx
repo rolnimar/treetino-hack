@@ -248,15 +248,15 @@ export function CreateTreeForm() {
 
   return (
     <Card title="Launch New Funding Opportunity (Kickstarter Campaign)">
-      <p className="mb-4 text-sm text-forest/75">
+      <p className="mb-4 text-sm text-zinc-600">
         Set up a tokenized clean energy asset pool. Connect live Victron VRM
         telemetry, explain the off-taker agreement, and invite community
         investors to fund hardware on Solana.
       </p>
 
       {/* Preset Archetype Buttons */}
-      <div className="mb-6 rounded-xl border border-forest/15 bg-forest/5 p-4">
-        <span className="block font-mono text-xs font-bold text-forest uppercase">
+      <div className="mb-6 rounded-2xl border border-black/10 bg-zinc-50 p-4">
+        <span className="block font-mono text-xs font-bold text-zinc-700 uppercase">
           Quick Start from Verified Victron DePIN Hardware:
         </span>
         <div className="mt-2.5 flex flex-wrap gap-2">
@@ -265,7 +265,7 @@ export function CreateTreeForm() {
               key={preset.victronSiteId}
               type="button"
               onClick={() => handleApplyPreset(preset)}
-              className="rounded-lg border border-forest/20 bg-white px-3 py-1.5 text-xs font-bold text-forest hover:bg-forest/10 hover:border-forest/40 transition shadow-2xs"
+              className="rounded-xl border border-black/10 bg-white px-3 py-1.5 text-xs font-bold text-zinc-900 hover:bg-zinc-100 hover:border-black/20 transition shadow-2xs"
             >
               {preset.name}
             </button>
@@ -282,13 +282,13 @@ export function CreateTreeForm() {
 
       <ErrorMessage error={reporter.error} />
       {reporter.isFetching && (
-        <p className="mb-4 text-sm font-mono text-emerald-800">
+        <p className="mb-4 text-sm font-mono text-t-blue">
           Preparing the tree’s simulated Cerbo GX reporter wallet…
         </p>
       )}
 
       {saveStatus && (
-        <p className="mb-4 rounded-md bg-leaf/15 p-3 text-xs font-mono text-forest">
+        <p className="mb-4 rounded-xl border border-sky-200 bg-sky-50 p-3 text-xs font-mono text-t-blue">
           {saveStatus}
         </p>
       )}
@@ -299,8 +299,8 @@ export function CreateTreeForm() {
           className="space-y-6 disabled:opacity-60"
         >
           {/* Section 1: Campaign Narrative */}
-          <div className="rounded-xl border border-forest/15 bg-white p-4">
-            <h4 className="font-bold text-sm text-forest mb-3">
+          <div className="rounded-2xl border border-black/10 bg-white p-5">
+            <h4 className="font-bold text-sm text-zinc-950 mb-3">
               1. Campaign Story & Asset Dossier
             </h4>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -352,8 +352,8 @@ export function CreateTreeForm() {
           </div>
 
           {/* Section 2: Economics & Off-Taker PPA */}
-          <div className="rounded-xl border border-forest/15 bg-white p-4">
-            <h4 className="font-bold text-sm text-forest mb-3">
+          <div className="rounded-2xl border border-black/10 bg-white p-5">
+            <h4 className="font-bold text-sm text-zinc-950 mb-3">
               2. Economics, Yield & Off-Taker PPA
             </h4>
             <div className="grid gap-4 sm:grid-cols-2">
@@ -381,8 +381,8 @@ export function CreateTreeForm() {
           </div>
 
           {/* Section 3: On-Chain Wallets & Hardware Telemetry */}
-          <div className="rounded-xl border border-forest/15 bg-white p-4">
-            <h4 className="font-bold text-sm text-forest mb-3">
+          <div className="rounded-2xl border border-black/10 bg-white p-5">
+            <h4 className="font-bold text-sm text-zinc-950 mb-3">
               3. On-Chain Protocol & Hardware Signers
             </h4>
             <div className="grid gap-4 sm:grid-cols-2">

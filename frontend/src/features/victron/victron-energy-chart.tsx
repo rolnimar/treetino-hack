@@ -51,19 +51,19 @@ export function VictronEnergyChart({
   }, '');
 
   return (
-    <div className="rounded-2xl border border-forest/15 bg-white/90 p-5 shadow-sm sm:p-6">
+    <div className="rounded-3xl border border-black/10 bg-white/95 p-5 shadow-sm sm:p-6">
       {/* Installation Data Top Bar */}
-      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-forest/10 pb-4">
+      <div className="flex flex-wrap items-center justify-between gap-4 border-b border-black/10 pb-4">
         <div>
           <div className="flex items-center gap-3">
-            <h3 className="font-bold text-forest text-lg tracking-tight sm:text-xl">
+            <h3 className="font-bold text-zinc-950 text-lg tracking-tight sm:text-xl">
               Installation Data · 24-Hour Energy Telemetry
             </h3>
             <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 font-mono text-[10px] text-emerald-800 font-bold">
               Verified Venus OS History
             </span>
           </div>
-          <p className="mt-0.5 text-xs text-forest/70">
+          <p className="mt-0.5 text-xs text-zinc-500">
             Hourly generation, demand, battery state of charge, and grid
             feed-in.
           </p>
@@ -74,26 +74,26 @@ export function VictronEnergyChart({
           <button
             type="button"
             onClick={() => setShowForecast(!showForecast)}
-            className="rounded-lg border border-forest/15 bg-cream/40 px-3 py-1.5 font-mono text-xs font-semibold text-forest hover:bg-forest/5 transition"
+            className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-1.5 font-mono text-xs font-semibold text-zinc-800 hover:bg-zinc-100 transition"
           >
             {showForecast ? 'Hide forecast' : 'Show forecast'}
           </button>
 
-          <div className="rounded-lg border border-forest/15 bg-cream/40 px-3 py-1.5 font-mono text-xs font-semibold text-forest">
+          <div className="rounded-xl border border-black/10 bg-zinc-50 px-3 py-1.5 font-mono text-xs font-semibold text-zinc-800">
             System overview ▾
           </div>
 
-          <div className="flex items-center rounded-lg border border-forest/15 bg-cream/40 text-xs font-mono">
+          <div className="flex items-center rounded-xl border border-black/10 bg-zinc-50 text-xs font-mono">
             <button
               type="button"
-              className="px-2.5 py-1.5 text-forest/70 hover:text-forest transition"
+              className="px-2.5 py-1.5 text-zinc-500 hover:text-zinc-950 transition"
             >
               ‹
             </button>
-            <span className="px-2 font-bold text-forest">Today</span>
+            <span className="px-2 font-bold text-zinc-950">Today</span>
             <button
               type="button"
-              className="px-2.5 py-1.5 text-forest/70 hover:text-forest transition"
+              className="px-2.5 py-1.5 text-zinc-500 hover:text-zinc-950 transition"
             >
               ›
             </button>
@@ -106,33 +106,33 @@ export function VictronEnergyChart({
         <div className="flex flex-wrap items-center gap-4">
           <div className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-xs bg-[#d97706]" />
-            <span className="text-forest/80 font-mono text-[11px] font-semibold">
+            <span className="text-zinc-700 font-mono text-[11px] font-semibold">
               Solar (kWh)
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="h-3 w-3 rounded-xs bg-[#0284c7]" />
-            <span className="text-forest/80 font-mono text-[11px] font-semibold">
+            <span className="text-zinc-700 font-mono text-[11px] font-semibold">
               {isEv ? 'EV Fast Charging (kWh)' : 'Consumption (kWh)'}
             </span>
           </div>
           {dailyTotals.gridExportKwh > 0 && (
             <div className="flex items-center gap-1.5">
               <span className="h-3 w-3 rounded-xs bg-[#059669]" />
-              <span className="text-forest/80 font-mono text-[11px] font-semibold">
+              <span className="text-zinc-700 font-mono text-[11px] font-semibold">
                 Grid Feed-in (kWh)
               </span>
             </div>
           )}
           <div className="flex items-center gap-1.5">
             <span className="h-1 w-4 bg-[#2563eb] rounded-full" />
-            <span className="text-forest/80 font-mono text-[11px] font-semibold">
+            <span className="text-zinc-700 font-mono text-[11px] font-semibold">
               Battery SOC (%)
             </span>
           </div>
         </div>
 
-        <div className="font-mono text-[11px] text-forest/60">
+        <div className="font-mono text-[11px] text-zinc-500">
           Peak today: {maxKwh.toFixed(2)} kWh
         </div>
       </div>
@@ -140,35 +140,35 @@ export function VictronEnergyChart({
       {/* Main Chart Area with Dual Y-Axes */}
       <div className="relative mt-6">
         {/* Left Y-Axis: kWh */}
-        <div className="absolute left-0 top-0 bottom-6 flex w-10 flex-col justify-between text-right font-mono text-[10px] text-forest/50">
+        <div className="absolute left-0 top-0 bottom-6 flex w-10 flex-col justify-between text-right font-mono text-[10px] text-zinc-400">
           <span>{maxKwh.toFixed(1)}</span>
           <span>{(maxKwh * 0.75).toFixed(1)}</span>
           <span>{(maxKwh * 0.5).toFixed(1)}</span>
           <span>{(maxKwh * 0.25).toFixed(1)}</span>
           <span>0</span>
         </div>
-        <div className="absolute -left-1 -top-4 font-mono text-[9px] uppercase tracking-wider text-forest/50 font-bold">
+        <div className="absolute -left-1 -top-4 font-mono text-[9px] uppercase tracking-wider text-zinc-500 font-bold">
           kWh
         </div>
 
         {/* Right Y-Axis: % */}
-        <div className="absolute right-0 top-0 bottom-6 flex w-8 flex-col justify-between text-left font-mono text-[10px] text-forest/50">
+        <div className="absolute right-0 top-0 bottom-6 flex w-8 flex-col justify-between text-left font-mono text-[10px] text-zinc-400">
           <span>100%</span>
           <span>75%</span>
           <span>50%</span>
           <span>25%</span>
           <span>0%</span>
         </div>
-        <div className="absolute -right-1 -top-4 font-mono text-[9px] uppercase tracking-wider text-forest/50 font-bold">
+        <div className="absolute -right-1 -top-4 font-mono text-[9px] uppercase tracking-wider text-zinc-500 font-bold">
           % SOC
         </div>
 
         {/* Chart Canvas */}
         <div className="mx-12 relative h-56">
           {/* Horizontal Grid lines */}
-          <div className="absolute inset-0 flex flex-col justify-between border-b border-forest/15 pointer-events-none">
+          <div className="absolute inset-0 flex flex-col justify-between border-b border-black/10 pointer-events-none">
             {[0, 1, 2, 3, 4].map((i) => (
-              <div key={i} className="w-full border-t border-forest/5" />
+              <div key={i} className="w-full border-t border-black/5" />
             ))}
           </div>
 
@@ -216,16 +216,16 @@ export function VictronEnergyChart({
                   {/* "Now" Marker Badge */}
                   {isNow && (
                     <div className="absolute -top-6 flex flex-col items-center pointer-events-none">
-                      <span className="rounded-xs bg-forest px-1.5 py-0.5 font-mono text-[9px] font-bold text-white uppercase shadow-xs">
+                      <span className="rounded-xs bg-t-blue px-1.5 py-0.5 font-mono text-[9px] font-bold text-white uppercase shadow-xs">
                         Now
                       </span>
-                      <div className="h-2 w-px bg-forest" />
+                      <div className="h-2 w-px bg-t-blue" />
                     </div>
                   )}
 
                   {/* Tooltip on hover */}
                   {isHovered && (
-                    <div className="absolute bottom-full mb-3 z-40 rounded-xl border border-forest/20 bg-forest p-3 text-[11px] text-white shadow-xl pointer-events-none whitespace-nowrap font-mono">
+                    <div className="absolute bottom-full mb-3 z-40 rounded-2xl border border-black/10 bg-zinc-950 p-3 text-[11px] text-white shadow-xl pointer-events-none whitespace-nowrap font-mono">
                       <div className="font-bold border-b border-white/20 pb-1 mb-1.5 flex items-center justify-between gap-4">
                         <span>Time: {d.hourLabel}</span>
                         <span className="text-sky-300">
@@ -275,7 +275,7 @@ export function VictronEnergyChart({
         </div>
 
         {/* X-Axis Time Labels */}
-        <div className="mt-2 flex justify-between mx-12 font-mono text-[10px] text-forest/60">
+        <div className="mt-2 flex justify-between mx-12 font-mono text-[10px] text-zinc-400">
           <span>00:00</span>
           <span>04:00</span>
           <span>08:00</span>

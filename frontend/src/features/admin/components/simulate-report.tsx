@@ -127,7 +127,7 @@ export function SimulateReport({
       >
         {mutation.isPending ? 'Submitting report…' : 'Simulate report on chain'}
       </Button>
-      <p className="text-xs text-forest/65">
+      <p className="text-xs text-zinc-500">
         {tree.phase !== 'active'
           ? 'Activate this tree to start reporting.'
           : !allowed

@@ -13,7 +13,7 @@ export function MockReporterStatus({ tree }: { tree: IndexedTree }) {
     <div className="my-4 space-y-2 text-sm">
       <ErrorMessage error={query.error} />
       {query.isSuccess && reporter === null && (
-        <p className="text-xs text-forest/65">
+        <p className="text-xs text-zinc-500">
           No backend mock reporter is configured for this tree. Daily reports
           must be signed by its reporter wallet.
         </p>
@@ -29,7 +29,7 @@ export function MockReporterStatus({ tree }: { tree: IndexedTree }) {
               ? 'Balance will update when reporting starts'
               : `${Number(reporter.balanceLamports) / 1e9} devnet SOL`}
           </p>
-          <p className="text-xs text-forest/65">
+          <p className="text-xs text-zinc-500">
             Submits completed UTC days automatically after activation.
           </p>
           {reporter.lastError && (

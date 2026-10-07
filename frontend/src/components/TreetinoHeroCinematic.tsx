@@ -1,0 +1,323 @@
+import { useState, useRef, useEffect } from 'react';
+import { ArrowRightIcon } from '../features/victron/victron-icons';
+
+interface TreetinoHeroCinematicProps {
+  onSelectAsset?: (siteId: number) => void;
+  onExploreCampaigns?: () => void;
+  onBackProject?: (siteId: number) => void;
+}
+
+interface HeroSlide {
+  id: string;
+  tag: string;
+  title: string;
+  creator: string;
+  tagline: string;
+  type: 'video' | 'image';
+  media: string;
+  poster?: string;
+  siteId: number;
+  raised: string;
+  target: string;
+  percent: number;
+  apy: string;
+  backers: number;
+  daysLeft: number;
+  livePower: string;
+}
+
+const HERO_SLIDES: HeroSlide[] = [
+  {
+    id: 'tree',
+    tag: 'Prague, Czech Republic',
+    title: 'Treetino Energy Tree',
+    creator: 'MKovo Engineering',
+    tagline: 'Solar-wind kinetic hardware generating 24/7 clean power.',
+    type: 'video',
+    media: '/video/hero-v1-cine-noaudio.webm',
+    poster: '/img/hero-images/poster-v1_1.1.1.webp',
+    siteId: 100001,
+    raised: '€192,700',
+    target: '€235,000',
+    percent: 82,
+    apy: '12.8%',
+    backers: 48,
+    daysLeft: 14,
+    livePower: '42.8 kW live',
+  },
+  {
+    id: 'battery',
+    tag: 'Amsterdam, Netherlands',
+    title: 'Commercial Battery BESS',
+    creator: 'EnergyHub Amsterdam',
+    tagline: 'Grid-scale battery storage capturing power market spreads.',
+    type: 'image',
+    media: '/campaigns/ess.jpg',
+    poster: '/campaigns/ess.jpg',
+    siteId: 219742,
+    raised: '€42,100',
+    target: '€50,000',
+    percent: 84,
+    apy: '14.2%',
+    backers: 36,
+    daysLeft: 21,
+    livePower: '12.4 kW live',
+  },
+  {
+    id: 'offgrid',
+    tag: 'Queensland, Australia',
+    title: 'Off-Grid Solar Microgrid',
+    creator: 'Outback Power QLD',
+    tagline: 'Remote community microgrid replacing diesel generators.',
+    type: 'image',
+    media: '/campaigns/offgrid.jpg',
+    poster: '/campaigns/offgrid.jpg',
+    siteId: 209689,
+    raised: '€7,850',
+    target: '€10,000',
+    percent: 79,
+    apy: '8.5%',
+    backers: 27,
+    daysLeft: 18,
+    livePower: '3.8 kW live',
+  },
+  {
+    id: 'ev',
+    tag: 'Paris, France',
+    title: 'Ultra-Fast EV Plaza',
+    creator: 'ChargeVolt Paris',
+    tagline: 'Commercial 150kW high-speed EV charging stations.',
+    type: 'image',
+    media: '/campaigns/ev.jpg',
+    poster: '/campaigns/ev.jpg',
+    siteId: 374891,
+    raised: '€91,500',
+    target: '€100,000',
+    percent: 92,
+    apy: '18.5%',
+    backers: 82,
+    daysLeft: 9,
+    livePower: '18.2 kW live',
+  },
+];
+
+export function TreetinoHeroCinematic({
+  onSelectAsset,
+  onExploreCampaigns,
+  onBackProject,
+}: TreetinoHeroCinematicProps) {
+  const [currentSlideIndex, setCurrentSlideIndex] = useState(0);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const slide = HERO_SLIDES[currentSlideIndex];
+
+  useEffect(() => {
+    if (slide.type === 'video' && videoRef.current) {
+      videoRef.current.load();
+      videoRef.current.play().catch(() => {});
+    }
+  }, [currentSlideIndex, slide.type]);
+
+  return (
+    <section className="relative min-h-[92vh] sm:min-h-screen w-full bg-zinc-950 overflow-hidden select-none flex flex-col justify-end pt-28 pb-12 sm:pb-16">
+      {/* 1. Cinematic Background: Authentic Video or High-Res Image for each project */}
+      <div className="pointer-events-none absolute inset-0 h-full w-full overflow-hidden bg-zinc-950">
+        {slide.type === 'video' ? (
+          <video
+            ref={videoRef}
+            key={slide.media}
+            poster={slide.poster}
+            className="absolute inset-0 h-full w-full object-cover opacity-85 transition-opacity duration-1000 scale-105"
+            muted
+            loop
+            playsInline
+            autoPlay
+            preload="auto"
+          >
+            <source src={slide.media} type="video/webm" />
+          </video>
+        ) : (
+          <img
+            key={slide.media}
+            src={slide.media}
+            alt={slide.title}
+            className="absolute inset-0 h-full w-full object-cover opacity-85 transition-opacity duration-1000 scale-105"
+          />
+        )}
+
+        {/* Soft, clean gradients so the hardware breathes while text is perfectly legible */}
+        <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-zinc-950/50 to-zinc-950/70" />
+
+        {/* Ethereal Atmospheric Radial Spotlights for Dynamic Depth */}
+        <div className="pointer-events-none absolute -top-40 left-1/4 h-[500px] w-[500px] rounded-full bg-blue-600/10 blur-[140px]" />
+        <div className="pointer-events-none absolute bottom-10 right-10 h-[400px] w-[400px] rounded-full bg-emerald-500/10 blur-[130px]" />
+      </div>
+
+      {/* 2. Main High-Impact Hero Content */}
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 flex flex-col justify-end">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-end">
+          {/* Left: Punchy Title & Pitch */}
+          <div className="lg:col-span-7 space-y-4 text-white">
+            <div className="font-mono text-xs text-zinc-400 tracking-wider uppercase">
+              {slide.tag}
+            </div>
+
+            <h1 className="text-5xl sm:text-7xl lg:text-8xl font-medium tracking-tight text-white leading-[1.02]">
+              {slide.title}
+            </h1>
+
+            <p className="max-w-xl text-base sm:text-lg text-zinc-300 font-light leading-relaxed">
+              {slide.tagline}
+            </p>
+          </div>
+
+          {/* Right: The High-Yield Investment Card */}
+          <div className="lg:col-span-5">
+            <div className="relative group">
+              {/* Subtle ambient back-glow */}
+              <div className="pointer-events-none absolute -inset-0.5 rounded-3xl bg-gradient-to-br from-blue-500/20 via-indigo-500/10 to-emerald-500/20 blur-xl opacity-50 transition duration-500 group-hover:opacity-70" />
+
+              <div className="relative rounded-2xl border border-white/15 bg-zinc-950/75 p-6 sm:p-7 backdrop-blur-2xl text-white space-y-5 shadow-2xl">
+                {/* Pledged Amount */}
+                <div>
+                  <div className="flex items-baseline justify-between font-mono">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl sm:text-4xl font-light text-white tracking-tight">
+                        {slide.raised}
+                      </span>
+                      <span className="text-xs text-zinc-400">
+                        of {slide.target}
+                      </span>
+                    </div>
+                    <span className="text-xs font-mono text-zinc-400">
+                      {slide.percent}% funded
+                    </span>
+                  </div>
+
+                  {/* Luminous progress bar */}
+                  <div className="mt-3 h-1.5 w-full overflow-hidden rounded-full bg-white/10">
+                    <div
+                      className="h-full bg-gradient-to-r from-blue-500 via-indigo-400 to-emerald-400 transition-all duration-700 rounded-full shadow-[0_0_12px_rgba(52,211,153,0.35)]"
+                      style={{ width: `${slide.percent}%` }}
+                    />
+                  </div>
+                </div>
+
+                {/* 3 Core Stats: APY · Days Left · Backers */}
+                <div className="grid grid-cols-3 gap-3 border-t border-white/10 pt-4 font-mono">
+                  <div>
+                    <span className="block text-2xl sm:text-3xl font-light text-emerald-400 drop-shadow-[0_0_12px_rgba(52,211,153,0.25)]">
+                      {slide.apy}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] text-zinc-400 uppercase tracking-wider">
+                      Fixed APY
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-2xl sm:text-3xl font-light text-white">
+                      {slide.daysLeft}d
+                    </span>
+                    <span className="mt-0.5 block text-[10px] text-zinc-400 uppercase tracking-wider">
+                      Days Left
+                    </span>
+                  </div>
+                  <div>
+                    <span className="block text-2xl sm:text-3xl font-light text-white">
+                      {slide.backers}
+                    </span>
+                    <span className="mt-0.5 block text-[10px] text-zinc-400 uppercase tracking-wider">
+                      Backers
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="space-y-2.5 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (onBackProject) {
+                        onBackProject(slide.siteId);
+                      } else {
+                        onSelectAsset?.(slide.siteId);
+                      }
+                    }}
+                    className="flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#183d89] to-[#2563eb] hover:from-[#1d4bb5] hover:to-[#3b82f6] px-6 py-3.5 text-center text-sm font-semibold text-white shadow-lg shadow-blue-900/30 transition-all active:scale-[0.99] cursor-pointer"
+                  >
+                    <span>Back This Project</span>
+                    <ArrowRightIcon className="h-4 w-4" />
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => onSelectAsset?.(slide.siteId)}
+                    className="flex items-center justify-center gap-1.5 w-full text-center text-xs font-mono text-zinc-400 hover:text-white transition cursor-pointer"
+                  >
+                    <span>Live SCADA Telemetry ↗</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 3. Bottom Minimal Controls */}
+        <div className="mt-8 flex flex-wrap items-center justify-between gap-4 border-t border-white/10 pt-4 text-white">
+          <div className="flex items-center gap-6 sm:gap-8">
+            {HERO_SLIDES.map((s, idx) => {
+              const shortNames = [
+                'Energy Tree',
+                'Battery Storage',
+                'Solar Microgrid',
+                'EV Plaza',
+              ];
+              const isCurrent = idx === currentSlideIndex;
+              return (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={() => setCurrentSlideIndex(idx)}
+                  className={`group relative pb-2 text-xs font-mono transition-colors cursor-pointer ${
+                    isCurrent
+                      ? 'text-white font-medium'
+                      : 'text-zinc-500 hover:text-zinc-300'
+                  }`}
+                >
+                  <span className="flex items-center gap-2">
+                    <span
+                      className={
+                        isCurrent ? 'text-white font-medium' : 'text-zinc-600'
+                      }
+                    >
+                      0{idx + 1}
+                    </span>
+                    <span className="hidden sm:inline">{shortNames[idx]}</span>
+                  </span>
+                  {isCurrent && (
+                    <span className="absolute bottom-0 left-0 right-0 h-[2px] bg-white rounded-full shadow-[0_0_8px_rgba(255,255,255,0.6)]" />
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              if (onExploreCampaigns) {
+                onExploreCampaigns();
+              } else {
+                document
+                  .getElementById('bond-explainer')
+                  ?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+            className="flex items-center gap-1.5 text-xs font-mono text-zinc-400 hover:text-white transition cursor-pointer"
+          >
+            <span>Explore campaigns</span>
+            <span className="text-white/70">↓</span>
+          </button>
+        </div>
+      </div>
+    </section>
+  );
+}

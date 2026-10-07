@@ -28,11 +28,11 @@ export function ProtocolSetup() {
           state={state}
         />
         {state.upgradeAuthority !== wallet && (
-          <p className="mt-3 text-sm text-forest/70">
+          <p className="mt-3 text-sm text-zinc-500">
             Connect the program’s upgrade authority wallet to manage this list.
           </p>
         )}
-        <p className="mt-4 text-xs text-forest/70">
+        <p className="mt-4 text-xs text-zinc-500">
           These wallets can create trees. Backend admin login access is managed
           separately.
         </p>
@@ -51,7 +51,7 @@ export function ProtocolSetup() {
         >
           Initialize payment token
         </Button>
-        <p className="mt-3 text-xs text-forest/70">
+        <p className="mt-3 text-xs text-zinc-500">
           Your wallet pays account rent and transaction fees.
         </p>
       </Card>

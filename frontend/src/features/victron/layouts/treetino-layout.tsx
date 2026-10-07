@@ -112,7 +112,7 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
   const batteryTrend = [82, 83, 83.8, 84.2, 84.5];
 
   return (
-    <div className="rounded-2xl border border-forest/15 bg-white/95 p-5 shadow-sm sm:p-7 space-y-6">
+    <div className="rounded-3xl border border-black/10 bg-white p-6 sm:p-8 shadow-xs space-y-6">
       {/* 1. REUSABLE INSTALLATION HEADER */}
       <InstallationHeader
         demo={demo}
@@ -122,15 +122,15 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
       />
 
       {/* 2. INTERACTIVE PHYSICS SIMULATION CONTROLS */}
-      <div className="rounded-xl border border-forest/20 bg-forest/5 p-4 sm:p-5">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-forest/10 pb-3">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold uppercase tracking-wider text-forest">
-              Dual-Modality Aerodynamic & Solar Physics Simulator
+      <div className="rounded-2xl border border-black/10 bg-zinc-50/80 p-5 sm:p-6">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-black/10 pb-3.5">
+          <div className="flex items-center gap-2 font-mono">
+            <span className="text-xs font-semibold tracking-wider text-zinc-500 uppercase">
+              Hardware Physics Simulator
             </span>
             {isSimulating && (
-              <span className="rounded bg-amber-500/20 px-2 py-0.5 font-mono text-[10px] font-bold text-amber-900 border border-amber-500/30">
-                Interactive Simulation Active
+              <span className="rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold text-emerald-700 border border-emerald-200">
+                Active
               </span>
             )}
           </div>
@@ -138,9 +138,9 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
             <button
               type="button"
               onClick={resetSimulation}
-              className="font-mono text-xs font-bold text-forest underline hover:text-forest/80 cursor-pointer"
+              className="font-mono text-xs font-medium text-[#183d89] hover:underline cursor-pointer"
             >
-              Reset to Live Prague Weather
+              Reset to Live Weather
             </button>
           )}
         </div>
@@ -149,11 +149,11 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
           {/* Slider 1: Wind Speed */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-mono">
-              <span className="font-bold text-forest flex items-center gap-1.5">
-                <WindIcon className="h-3.5 w-3.5 text-sky-700" />
-                Wind Speed (m/s)
+              <span className="font-medium text-zinc-800 flex items-center gap-1.5">
+                <WindIcon className="h-3.5 w-3.5 text-zinc-500" />
+                Wind Speed
               </span>
-              <span className="font-black text-sky-800">
+              <span className="font-semibold text-zinc-950">
                 {simWindSpeed.toFixed(1)} m/s ({(simWindSpeed * 3.6).toFixed(1)}{' '}
                 km/h)
               </span>
@@ -168,24 +168,23 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
                 setSimWindSpeed(parseFloat(e.target.value));
                 setIsSimulating(true);
               }}
-              className="w-full accent-sky-700 cursor-pointer"
+              className="w-full accent-[#183d89] cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-forest/60 font-mono">
-              <span>0 (Calm)</span>
-              <span>2.0 (Cut-in)</span>
-              <span>12 (35 kW Rated)</span>
-              <span>25 (Storm Cut-off)</span>
+            <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
+              <span>0 m/s (Calm)</span>
+              <span>12 m/s (Rated)</span>
+              <span>28 m/s (Storm)</span>
             </div>
           </div>
 
           {/* Slider 2: Solar Irradiance */}
           <div className="space-y-1.5">
             <div className="flex justify-between text-xs font-mono">
-              <span className="font-bold text-forest flex items-center gap-1.5">
-                <SunIcon className="h-3.5 w-3.5 text-amber-600" />
-                Solar Irradiance (W/m²)
+              <span className="font-medium text-zinc-800 flex items-center gap-1.5">
+                <SunIcon className="h-3.5 w-3.5 text-amber-500" />
+                Solar Irradiance
               </span>
-              <span className="font-black text-amber-800">
+              <span className="font-semibold text-zinc-950">
                 {simIrradiance} W/m²
               </span>
             </div>
@@ -199,20 +198,19 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
                 setSimIrradiance(parseInt(e.target.value, 10));
                 setIsSimulating(true);
               }}
-              className="w-full accent-amber-600 cursor-pointer"
+              className="w-full accent-amber-500 cursor-pointer"
             />
-            <div className="flex justify-between text-[10px] text-forest/60 font-mono">
-              <span>0 (Night)</span>
-              <span>300 (Cloudy)</span>
-              <span>750 (Bright Sun)</span>
-              <span>1000+ (Peak Summer)</span>
+            <div className="flex justify-between text-[10px] text-zinc-400 font-mono">
+              <span>0 W/m² (Night)</span>
+              <span>750 (Sun)</span>
+              <span>1,100 W/m²</span>
             </div>
           </div>
 
           {/* Selector: Smart AI Defense Mode */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-mono font-bold text-forest">
-              Smart AI Operating Mode
+            <label className="block text-xs font-mono font-medium text-zinc-800">
+              AI Operating Mode
             </label>
             <select
               value={selectedAiMode}
@@ -220,23 +218,23 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
                 setSelectedAiMode(e.target.value);
                 setIsSimulating(true);
               }}
-              className="w-full rounded-lg border border-forest/20 bg-white px-3 py-1.5 font-mono text-xs font-bold text-forest focus:outline-none focus:ring-2 focus:ring-forest/30 cursor-pointer"
+              className="w-full rounded-xl border border-black/10 bg-white px-3 py-1.5 font-mono text-xs text-zinc-900 focus:outline-none focus:ring-1 focus:ring-[#183d89] cursor-pointer"
             >
               <option value="Sun Tracking & Venturi Boost">
-                Sun Tracking & Venturi Boost (Optimal)
+                Sun Tracking & Venturi Boost
               </option>
               <option value="Storm Wind Defense (Prapor Folded)">
-                Storm Wind Defense (Prapor Folded &gt;25 m/s)
+                Storm Wind Defense (&gt;25 m/s)
               </option>
               <option value="Hail Protection (Ground Tilt)">
                 Hail Protection (Ground Tilt)
               </option>
               <option value="Aerodynamic Synergy (Turbine Flow Optimization)">
-                Aerodynamic Synergy (Flow Optimization)
+                Aerodynamic Flow Optimization
               </option>
             </select>
-            <div className="text-[10px] text-forest/60 font-mono">
-              22 Dunkermotoren actuators dynamically position 300 leaves
+            <div className="text-[10px] text-zinc-400 font-mono">
+              22 actuators positioning 300 leaves
             </div>
           </div>
         </div>
@@ -278,7 +276,7 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
       {/* 5. SCHEMATIC CANVAS + UNCOUPLED TELEMETRY SIDEPANEL */}
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-5 items-stretch">
         {/* LEFT 9 COLS: ELECTRICAL CIRCUIT SCHEMATIC CANVAS */}
-        <div className="xl:col-span-9 overflow-x-auto rounded-2xl border border-forest/15 bg-[#fbfaf7] p-3 sm:p-5 flex items-center">
+        <div className="xl:col-span-9 overflow-x-auto rounded-3xl border border-black/10 bg-zinc-50/50 p-4 sm:p-6 flex items-center shadow-xs">
           <svg
             viewBox="0 0 770 420"
             className="w-full h-auto min-w-[680px] select-none"
@@ -364,7 +362,6 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
               accent="amber"
               icon={<SunIcon className="h-4 w-4 text-amber-600" />}
               title="Solar Leaves"
-              badge="10 kWp"
               primaryValue={
                 currentSolarWatts >= 1000
                   ? `${(currentSolarWatts / 1000).toFixed(2)} kW`
@@ -378,25 +375,25 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
 
             {/* Card 1.2: Biomimetic Trunk Core Hub */}
             <foreignObject x={280} y={30} width={210} height={150}>
-              <div className="h-full w-full rounded-2xl border-2 border-forest/20 bg-cream/90 shadow-md flex flex-col justify-between overflow-hidden text-center select-none p-3">
+              <div className="h-full w-full rounded-2xl border border-black/10 bg-white shadow-xs flex flex-col justify-between overflow-hidden text-center select-none p-3.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="font-mono text-[10px] font-bold uppercase tracking-wider text-forest/70">
-                    Cerbo GX + MultiPlus-II
+                  <span className="font-mono text-[10px] font-semibold uppercase tracking-wider text-zinc-500">
+                    Cerbo GX Core
                   </span>
-                  <span className="rounded bg-forest/10 px-2 py-0.5 font-mono text-[9px] font-bold text-forest">
-                    GX Hub
+                  <span className="font-mono text-[10px] text-zinc-400">
+                    Synchronized
                   </span>
                 </div>
                 <div>
-                  <span className="rounded-full bg-forest/10 px-2.5 py-0.5 font-mono text-[10px] font-bold text-forest">
-                    Mode: {demo.systemInfo.systemState}
-                  </span>
-                  <div className="mt-1 font-mono text-base font-extrabold text-emerald-800">
-                    {(totalGenWatts / 1000).toFixed(2)} kW Gen
+                  <div className="font-mono text-2xl font-light text-zinc-950">
+                    {(totalGenWatts / 1000).toFixed(2)} kW
+                  </div>
+                  <div className="font-mono text-[10px] text-zinc-400 uppercase tracking-wider mt-0.5">
+                    Microgrid Generation
                   </div>
                 </div>
-                <div className="border-t border-forest/10 pt-1 font-mono text-[9px] text-forest/60">
-                  Dual-Modality Microgrid Hub
+                <div className="border-t border-black/5 pt-1 font-mono text-[10px] text-zinc-400">
+                  Dual-Modality Hub
                 </div>
               </div>
             </foreignObject>
@@ -427,7 +424,6 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
               accent="sky"
               icon={<WindIcon className="h-4 w-4 text-sky-700" />}
               title="VAWT Turbines"
-              badge="35 kWp"
               primaryValue={
                 currentWindWatts >= 1000
                   ? `${(currentWindWatts / 1000).toFixed(2)} kW`
@@ -464,9 +460,8 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
               width={210}
               height={150}
               accent="forest"
-              icon={<GridIcon className="h-4 w-4 text-forest/70" />}
+              icon={<GridIcon className="h-4 w-4 text-zinc-600" />}
               title="Grid Intertie"
-              badge="Distribution"
               primaryValue={
                 gridWatts < 0
                   ? `${(-gridWatts / 1000).toFixed(2)} kW Export`
@@ -492,26 +487,25 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
           <TelemetrySidepanel
             demo={demo}
             specialtyTitle="Tree Biomimetics"
-            specialtyBadge="22 Actuators"
             specialtyContent={
-              <div className="space-y-2 text-[10px] font-mono text-forest/80">
+              <div className="space-y-2 text-[10px] font-mono text-zinc-600">
                 <div className="flex justify-between items-center">
                   <span>Acoustic Noise (10m):</span>
-                  <strong className="text-emerald-800">
+                  <strong className="text-emerald-700">
                     {calculatedNoise} dB(A) (Pass &lt;35)
                   </strong>
                 </div>
                 <div className="flex justify-between items-center">
                   <span>Ground Footprint:</span>
-                  <strong className="text-forest">1.2 m² (12m tree)</strong>
+                  <strong className="text-zinc-950">1.2 m² (12m tree)</strong>
                 </div>
-                <div className="border-t border-forest/10 pt-1.5">
-                  <span className="text-forest/60">Autonomous AI Mode:</span>
-                  <div className="font-bold text-emerald-900 mt-0.5 text-[10px] leading-snug">
+                <div className="border-t border-black/10 pt-1.5">
+                  <span className="text-zinc-500">Autonomous AI Mode:</span>
+                  <div className="font-bold text-t-blue mt-0.5 text-[10px] leading-snug">
                     {selectedAiMode}
                   </div>
                 </div>
-                <div className="flex justify-between items-center text-forest/60">
+                <div className="flex justify-between items-center text-zinc-500">
                   <span>Encoder Feedback:</span>
                   <span>RE 30-2-500</span>
                 </div>
@@ -525,7 +519,7 @@ export function TreetinoLayout({ demo }: TreetinoLayoutProps) {
       <CashFlowDossier
         offTakerTitle="MKovo s.r.o. · Precision Tooling"
         offTakerBadge="Active Corporate PPA"
-        offTakerDescription="Czech precision metal fabrication facility in Středočeský region. Contracted a 10-year direct power purchase agreement (PPA) with Treetino at a fixed indexed rate of $0.32 / kWh to hedge against volatile industrial wholesale tariffs and decarbonize precision CNC machining lines."
+        offTakerDescription="Czech precision metal fabrication facility in Central Bohemia region. Contracted a 10-year direct power purchase agreement (PPA) with Treetino at a fixed indexed rate of $0.32 / kWh to hedge against volatile industrial wholesale tariffs and decarbonize precision CNC machining lines."
         keyDetails={[
           {
             label: 'Conditional Purchase',

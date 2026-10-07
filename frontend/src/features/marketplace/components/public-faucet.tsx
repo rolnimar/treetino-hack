@@ -31,7 +31,7 @@ export function PublicFaucet({
   });
   return (
     <Card title="Demo faucet">
-      <p className="mb-4 text-sm text-forest/70">
+      <p className="mb-4 text-sm text-zinc-500">
         Get mockUSDC to try funding a tree. These are test tokens.
       </p>
       {connected ? (

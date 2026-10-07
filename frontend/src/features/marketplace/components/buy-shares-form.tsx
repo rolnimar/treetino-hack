@@ -56,7 +56,7 @@ export function BuySharesForm({
             Buy shares
           </Button>
         </div>
-        <p className="text-xs text-forest/70">
+        <p className="text-xs text-zinc-500">
           1 mockUSDC buys 1 share. Your wallet pays transaction fees in SOL.
         </p>
       </fieldset>

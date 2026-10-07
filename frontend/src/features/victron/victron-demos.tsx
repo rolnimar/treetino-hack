@@ -13,17 +13,20 @@ import {
   WindIcon,
   HeartIcon,
   BookmarkIcon,
-  ShieldCheckIcon,
-  SparklesIcon,
+  LockClosedIcon,
+  CodeBracketIcon,
+  ChevronDownIcon,
+  ExternalLinkIcon,
 } from './victron-icons';
+import { getCampaignCoverImage, CAMPAIGN_METADATA } from './campaign-helpers';
+import { EnergyBondFlowDiagram } from './components/energy-bond-flow-diagram';
 
 interface VictronDemosProps {
   onSelectAsset?: (siteId: number) => void;
   searchQuery?: string;
   onClearSearch?: () => void;
+  onBackProject?: (demo: VictronDemoItem) => void;
 }
-
-import { getCampaignCoverImage, CAMPAIGN_METADATA } from './campaign-helpers';
 
 type CategoryFilter =
   'all' | 'solar-trees' | 'ess' | 'ev' | 'offgrid' | 'high-yield';
@@ -32,12 +35,16 @@ export function VictronDemos({
   onSelectAsset,
   searchQuery = '',
   onClearSearch,
+  onBackProject,
 }: VictronDemosProps) {
   const [selectedCategory, setSelectedCategory] =
     useState<CategoryFilter>('all');
+  const [spotlightKey, setSpotlightKey] =
+    useState<VictronDemoItem['key']>('treetino-v1');
   const [bookmarkedKeys, setBookmarkedKeys] = useState<Set<string>>(
     () => new Set(['treetino-v1']),
   );
+  const [showArchitecture, setShowArchitecture] = useState(false);
 
   const wallet = useConnectedWallet();
   const { investments } = useVictronInvestments(wallet?.address);
@@ -55,6 +62,10 @@ export function VictronDemos({
   };
 
   const handleSelect = (siteId: number) => {
+    const target = demos.find((d) => d.siteId === siteId);
+    if (target) {
+      setSpotlightKey(target.key);
+    }
     onSelectAsset?.(siteId);
   };
 
@@ -93,12 +104,21 @@ export function VictronDemos({
     return true;
   });
 
-  // Pick featured project: default to treetino-v1 if in results, else first match
+  // Dynamic spotlight: pick spotlightKey if present in filteredDemos, otherwise first match
+  const filteredKeys = filteredDemos.map((d) => d.key);
+  const effectiveKey = filteredKeys.includes(spotlightKey)
+    ? spotlightKey
+    : (filteredDemos[0]?.key ?? 'treetino-v1');
+
   const featuredDemo =
-    filteredDemos.find((d) => d.key === 'treetino-v1') ?? filteredDemos[0];
-  const recommendedDemos = filteredDemos.filter(
-    (d) => d.siteId !== featuredDemo?.siteId,
-  );
+    filteredDemos.find((d) => d.key === effectiveKey) ?? filteredDemos[0];
+
+  // Active pipeline: if multiple filtered results exist, show the other filtered ones.
+  // Otherwise, show the other demos from the broader catalog so the pipeline column is never empty.
+  const recommendedDemos =
+    filteredDemos.length > 1
+      ? filteredDemos.filter((d) => d.siteId !== featuredDemo?.siteId)
+      : demos.filter((d) => d.siteId !== featuredDemo?.siteId);
 
   // Platform-wide metrics
   const totalTargetUsdc = demos.reduce(
@@ -116,59 +136,301 @@ export function VictronDemos({
   );
 
   return (
-    <section
-      id="kickstarter-marketplace"
-      aria-label="Clean Energy Crowdfunding Marketplace"
-      className="space-y-10 pb-16"
-    >
-      {/* 1. KICKSTARTER CATEGORY SUB-NAV BAR */}
-      <nav
-        aria-label="Campaign Categories"
-        className="flex items-center gap-2 overflow-x-auto border-b border-forest/15 pb-3 pt-2 text-xs font-semibold scrollbar-none"
-      >
-        {(
-          [
-            { id: 'all', label: 'All Projects' },
-            { id: 'solar-trees', label: 'Solar & Wind Trees' },
-            { id: 'ess', label: 'Commercial BESS' },
-            { id: 'ev', label: 'EV Fast-Charging' },
-            { id: 'offgrid', label: 'Off-Grid Solar' },
-            { id: 'high-yield', label: 'High Yield (>14% APY)' },
-          ] as const
-        ).map((tab) => {
-          const isActive = selectedCategory === tab.id;
-          return (
+    <div className="space-y-12">
+      {/* 1. UNIFIED KICKSTARTER & BOND YIELD EXPLAINER HERO */}
+      <div id="bond-explainer" className="scroll-mt-24 space-y-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between border-b border-black/10 pb-8">
+          <div className="max-w-3xl">
+            <p className="font-mono text-xs font-semibold uppercase tracking-wider text-zinc-400 mb-2">
+              Decentralized Energy Infrastructure
+            </p>
+            <h2 className="text-3xl font-medium tracking-tight text-zinc-950 sm:text-5xl lg:text-6xl">
+              The Clean Energy Kickstarter
+            </h2>
+            <div className="mt-2 text-xl sm:text-2xl font-normal text-[#183d89]">
+              Earn Real Yields from Physical Power. Zero Crypto Jargon.
+            </div>
+            <p className="mt-3 text-base sm:text-lg text-zinc-600 font-light leading-relaxed">
+              Back physical clean power hardware starting from €50. Power is
+              sold 24/7 to corporate off-takers, streaming 14.2% – 18.5% fixed
+              yields in 1:1 stable currency.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
             <button
-              key={tab.id}
               type="button"
-              onClick={() => setSelectedCategory(tab.id)}
-              className={`shrink-0 rounded-full px-4 py-2 transition-all duration-150 ${
-                isActive
-                  ? 'bg-forest text-white shadow-2xs'
-                  : 'bg-white/80 text-forest/75 hover:bg-forest/10 hover:text-forest'
-              }`}
+              disabled={isLoading}
+              onClick={() => void refetch()}
+              className="flex items-center gap-2 rounded-full border border-black/10 bg-white px-5 py-2.5 font-mono text-xs font-medium text-zinc-800 shadow-2xs transition hover:bg-black/5 disabled:opacity-50 cursor-pointer"
             >
-              {tab.label}
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+              {isLoading ? 'Syncing SCADA…' : 'Sync Live SCADA'}
             </button>
-          );
-        })}
-
-        <div className="ml-auto hidden items-center gap-3 md:flex">
-          <button
-            type="button"
-            disabled={isLoading}
-            onClick={() => void refetch()}
-            className="flex items-center gap-1.5 rounded-full border border-forest/20 bg-white px-3.5 py-1.5 font-mono text-[11px] font-bold text-forest transition hover:bg-forest/5 disabled:opacity-50"
-          >
-            <span className="h-1.5 w-1.5 rounded-full bg-emerald-600 animate-pulse" />
-            {isLoading ? 'Syncing…' : 'Sync Live SCADA'}
-          </button>
+          </div>
         </div>
-      </nav>
 
-      {/* 2. SEARCH ACTIVE NOTICE IF SEARCHING */}
+        {/* 2. VISUAL 3-STEP CAPITAL & ENERGY FLOW SCHEMA (ANIMATED / NO HEAVY TEXT) */}
+        <EnergyBondFlowDiagram />
+
+        {/* 3. YIELD COMPARISON RIBBON (CLEAN LIGHT FINTECH DESIGN) */}
+        <div className="rounded-2xl border border-black/10 bg-white px-6 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-xs font-mono shadow-xs">
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2 text-zinc-600">
+            <span className="font-bold text-zinc-900 uppercase tracking-wider">
+              Yield Comparison:
+            </span>
+            <span>
+              Bank CDs:{' '}
+              <strong className="text-zinc-800 font-semibold">~2.5%</strong>
+            </span>
+            <span className="text-zinc-300 hidden sm:inline">|</span>
+            <span>
+              10-Yr Gov Bonds:{' '}
+              <strong className="text-zinc-800 font-semibold">~3.8%</strong>
+            </span>
+            <span className="text-zinc-300 hidden sm:inline">|</span>
+            <span className="text-emerald-700 font-bold bg-emerald-50 border border-emerald-200/60 px-2.5 py-0.5 rounded-md">
+              Treetino Energy Bonds: 14.2% – 18.5% Fixed APY
+            </span>
+          </div>
+
+          <div className="text-zinc-500 font-mono text-[11px] shrink-0">
+            1:1 Stable Settlement · Zero Crypto Volatility
+          </div>
+        </div>
+      </div>
+
+      {/* 3. SMART CONTRACT ARCHITECTURE & ON-CHAIN GUARANTEES TOGGLE */}
+      <div className="rounded-2xl border border-black/10 bg-white shadow-xs overflow-hidden">
+        <button
+          type="button"
+          onClick={() => setShowArchitecture((prev) => !prev)}
+          className="flex w-full items-center justify-between px-6 py-4 text-left transition hover:bg-zinc-50/80 cursor-pointer"
+        >
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#183d89] text-white">
+              <CodeBracketIcon className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="font-medium text-zinc-950 text-sm">
+                Solana Smart Contract Architecture & On-Chain Security
+              </span>
+              <span className="hidden sm:inline font-mono text-xs text-zinc-500 ml-2">
+                (Anchor Program ID:
+                EEbZ5DVTQ9f4XeRwmSh4u2QPiMSSmQjqKPNEpDHoBU2n)
+              </span>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <span className="font-mono text-xs font-semibold text-[#183d89]">
+              {showArchitecture
+                ? 'Hide Guarantees'
+                : 'View 5 On-Chain Guarantees'}
+            </span>
+            <ChevronDownIcon
+              className={`h-4 w-4 text-zinc-500 transition-transform ${
+                showArchitecture ? 'rotate-180' : ''
+              }`}
+            />
+          </div>
+        </button>
+
+        {showArchitecture && (
+          <div className="border-t border-black/10 bg-zinc-50/50 p-6 sm:p-8 space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+              <p className="text-zinc-600 font-light">
+                Every solar tree, battery container, and EV plaza operates under
+                non-custodial Anchor smart contracts deployed to Solana devnet.
+                The creator has zero administrative backdoor to divert funds.
+              </p>
+              <a
+                href="https://solscan.io/account/EEbZ5DVTQ9f4XeRwmSh4u2QPiMSSmQjqKPNEpDHoBU2n?cluster=devnet"
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center gap-1.5 font-mono text-xs font-semibold text-[#183d89] hover:underline shrink-0"
+              >
+                <span>Verify on Solscan</span>
+                <ExternalLinkIcon className="h-3.5 w-3.5" />
+              </a>
+            </div>
+
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-3">
+              {/* Guarantee 1 */}
+              <div className="rounded-xl border border-black/10 bg-white p-5 space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-bold uppercase text-[#183d89] bg-blue-50 px-2 py-0.5 rounded">
+                    buy_shares.rs
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-400">
+                    revoke_mint
+                  </span>
+                </div>
+                <h4 className="text-sm font-medium text-zinc-950">
+                  Zero-Dilution Hard Cap
+                </h4>
+                <p className="text-xs text-zinc-600 font-light leading-relaxed">
+                  Each hardware pool has an isolated SPL mint. Pledging mints
+                  exact shares to your wallet. Once the target is reached,{' '}
+                  <code className="font-mono text-[11px] text-zinc-800 bg-zinc-100 px-1 py-0.5 rounded">
+                    revoke_mint
+                  </code>{' '}
+                  permanently burns mint authority on-chain.
+                </p>
+              </div>
+
+              {/* Guarantee 2 */}
+              <div className="rounded-xl border border-black/10 bg-white p-5 space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-bold uppercase text-[#183d89] bg-blue-50 px-2 py-0.5 rounded">
+                    purchase_tree.rs
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-400">
+                    PDA Escrow
+                  </span>
+                </div>
+                <h4 className="text-sm font-medium text-zinc-950">
+                  Supplier-Restricted Escrow
+                </h4>
+                <p className="text-xs text-zinc-600 font-light leading-relaxed">
+                  Pledged capital is locked in{' '}
+                  <code className="font-mono text-[11px] text-zinc-800 bg-zinc-100 px-1 py-0.5 rounded">
+                    funding_token_account
+                  </code>
+                  . The creator cannot withdraw capital arbitrarily. Funds
+                  release atomically only to the verified supplier at 100%
+                  funding.
+                </p>
+              </div>
+
+              {/* Guarantee 3 */}
+              <div className="rounded-xl border border-black/10 bg-white p-5 space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-bold uppercase text-[#183d89] bg-blue-50 px-2 py-0.5 rounded">
+                    submit_report.rs
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-400">
+                    Cerbo GX
+                  </span>
+                </div>
+                <h4 className="text-sm font-medium text-zinc-950">
+                  Cryptographic SCADA Oracle
+                </h4>
+                <p className="text-xs text-zinc-600 font-light leading-relaxed">
+                  Authorized on-site Victron Cerbo GX controllers (
+                  <code className="font-mono text-[11px] text-zinc-800 bg-zinc-100 px-1 py-0.5 rounded">
+                    has_one = reporter
+                  </code>
+                  ) sign 15-minute generation readings directly to Solana report
+                  PDAs with UTC day validation and lifetime accumulation.
+                </p>
+              </div>
+
+              {/* Guarantee 4 */}
+              <div className="rounded-xl border border-black/10 bg-white p-5 space-y-2 shadow-2xs">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-bold uppercase text-[#183d89] bg-blue-50 px-2 py-0.5 rounded">
+                    issue_invoice.rs
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-400">
+                    pay_invoice.rs
+                  </span>
+                </div>
+                <h4 className="text-sm font-medium text-zinc-950">
+                  On-Chain PPA Billing
+                </h4>
+                <p className="text-xs text-zinc-600 font-light leading-relaxed">
+                  Tamper-proof invoices are issued on-chain from actual metered
+                  kWh and settled in 1:1 stable payment tokens by corporate
+                  off-takers directly into the pool&apos;s revenue vault.
+                </p>
+              </div>
+
+              {/* Guarantee 5 */}
+              <div className="rounded-xl border border-black/10 bg-white p-5 space-y-2 shadow-2xs md:col-span-2 lg:col-span-2">
+                <div className="flex items-center justify-between">
+                  <span className="font-mono text-[10px] font-bold uppercase text-[#183d89] bg-blue-50 px-2 py-0.5 rounded">
+                    claim_rewards.rs
+                  </span>
+                  <span className="font-mono text-[10px] text-zinc-400">
+                    SCALE = 1e12
+                  </span>
+                </div>
+                <h4 className="text-sm font-medium text-zinc-950">
+                  O(1) Scaled Reward Index Accumulator
+                </h4>
+                <p className="text-xs text-zinc-600 font-light leading-relaxed">
+                  Our reward distribution engine uses a Uniswap/MasterChef-style
+                  scaled index accumulator ({' '}
+                  <code className="font-mono text-[11px] text-zinc-800 bg-zinc-100 px-1 py-0.5 rounded">
+                    reward_index += (paid * 10^12) / total_shares
+                  </code>{' '}
+                  ). Dividends accumulate seamlessly without loop gas spikes,
+                  and investors can claim their exact proportional yield in
+                  constant O(1) time with zero roundoff dust loss.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* 4. CATEGORY SELECTOR PILLS & STABLE CURRENCY SHIELD */}
+      <div className="space-y-4">
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {(
+            [
+              { id: 'all', label: 'All Pools' },
+              { id: 'solar-trees', label: 'Gateway Trees (14.2% APY)' },
+              { id: 'ess', label: 'Battery Storage BESS (15.4% APY)' },
+              { id: 'ev', label: 'EV Fast Charging (18.5% APY)' },
+              { id: 'offgrid', label: 'Off-Grid Microgrids (8.5% APY)' },
+              { id: 'high-yield', label: 'High Yield (>14% APY)' },
+            ] as const
+          ).map((tab) => {
+            const isActive = selectedCategory === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setSelectedCategory(tab.id)}
+                className={`rounded-full px-4 py-2 font-mono text-xs font-medium transition-all cursor-pointer shrink-0 ${
+                  isActive
+                    ? 'bg-black text-white shadow-xs'
+                    : 'bg-black/5 text-black/60 hover:bg-black/10 hover:text-black'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* 1:1 Stablecoin Protection Note */}
+        <div className="rounded-2xl border border-black/10 bg-zinc-50/80 px-4 py-3 sm:px-5 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-3">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[#183d89] text-white shrink-0">
+              <LockClosedIcon className="h-4 w-4" />
+            </div>
+            <div>
+              <span className="font-semibold text-zinc-950">
+                1:1 Energy Currency Protection:
+              </span>
+              <span className="text-zinc-600 font-light ml-1.5">
+                Revenues from real kilowatt-hours stream in stable currency.
+                Zero crypto price volatility.
+              </span>
+            </div>
+          </div>
+          <div className="font-mono text-[11px] text-zinc-500 shrink-0">
+            Direct PPA Escrow · EUR/USD Pegged
+          </div>
+        </div>
+      </div>
+
+      {/* SEARCH RESULTS BAR IF ACTIVE */}
       {searchQuery.trim() && (
-        <div className="flex items-center justify-between rounded-xl bg-forest/5 px-4 py-2.5 text-xs text-forest">
+        <div className="flex items-center justify-between rounded-2xl border border-black/10 bg-zinc-50 px-6 py-4 text-xs text-zinc-800">
           <span>
             Search results for: <strong>&ldquo;{searchQuery}&rdquo;</strong> (
             {filteredDemos.length} found)
@@ -177,7 +439,7 @@ export function VictronDemos({
             <button
               type="button"
               onClick={onClearSearch}
-              className="font-bold underline hover:text-leaf"
+              className="font-bold text-[#183d89] underline hover:text-[#2762ad] cursor-pointer"
             >
               Clear search
             </button>
@@ -185,78 +447,43 @@ export function VictronDemos({
         </div>
       )}
 
-      {/* 3. HERO CURATED SPOTLIGHT BANNER */}
-      <div className="relative overflow-hidden rounded-3xl bg-linear-to-br from-[#103022] via-[#173d2c] to-[#0a2016] px-6 py-8 text-white shadow-md sm:px-10 sm:py-10">
-        <div className="relative z-10 max-w-3xl space-y-3">
-          <div className="inline-flex items-center gap-2 rounded-full bg-emerald-500/20 px-3 py-1 text-[11px] font-bold tracking-wider text-emerald-300 uppercase backdrop-blur-xs">
-            <SparklesIcon className="h-3.5 w-3.5 text-emerald-400" />
-            Clean Energy Harvest 2026 · Live DePIN Crowdfunding
-          </div>
-          <h1 className="text-3xl font-extrabold tracking-tight sm:text-5xl sm:leading-tight">
-            Bring a clean energy project to life.
-          </h1>
-          <p className="text-sm leading-relaxed text-emerald-100/90 sm:text-base">
-            Back physical solar microgrids, battery arbitrage, and sculptural
-            energy trees. Verified on-site by Victron Cerbo GX hardware
-            streaming instant on-chain dividends directly to your wallet on
-            Solana.
-          </p>
-
-          <div className="pt-2 flex flex-wrap items-center gap-4 text-xs font-mono text-emerald-200">
-            <span className="flex items-center gap-1.5">
-              <ShieldCheckIcon className="h-4 w-4 text-emerald-400" />
-              Cerbo GX Hardware Escrow
-            </span>
-            <span className="flex items-center gap-1.5">
-              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
-              Milestone PPA Tariffs
-            </span>
-            <span>Continuous USDC Distributions</span>
-          </div>
-        </div>
-
-        {/* Ambient background decoration */}
-        <div className="pointer-events-none absolute -bottom-16 -right-16 h-80 w-80 rounded-full bg-emerald-500/10 blur-3xl" />
-        <div className="pointer-events-none absolute top-0 right-1/4 h-48 w-48 rounded-full bg-leaf/15 blur-2xl" />
-      </div>
-
       <ErrorMessage error={error} />
 
       {isPending && (
-        <div className="grid gap-6 lg:grid-cols-12">
-          <div className="h-120 animate-pulse rounded-3xl bg-forest/5 lg:col-span-7" />
+        <div className="grid gap-8 lg:grid-cols-12">
+          <div className="h-120 animate-pulse rounded-2xl bg-zinc-200/60 lg:col-span-7" />
           <div className="space-y-4 lg:col-span-5">
             {[1, 2, 3].map((i) => (
               <div
                 key={i}
-                className="h-36 animate-pulse rounded-2xl bg-forest/5"
+                className="h-36 animate-pulse rounded-2xl bg-zinc-200/60"
               />
             ))}
           </div>
         </div>
       )}
 
-      {/* 4. THE SIGNATURE KICKSTARTER 2-COLUMN DISCOVERY SECTION */}
+      {/* 5. THE SIGNATURE KICKSTARTER 2-COLUMN DISCOVERY SECTION */}
       {filteredDemos.length > 0 && featuredDemo && (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-12">
+        <div className="space-y-6">
+          <div className="grid grid-cols-1 gap-10 lg:grid-cols-12 lg:gap-12">
             {/* LEFT COLUMN (60%): FEATURED PROJECT HERO */}
-            <div className="lg:col-span-7 space-y-3">
+            <div className="lg:col-span-7 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold uppercase tracking-wider text-forest/70">
+                <span className="text-xs font-semibold tracking-[0.2em] text-[#183d89] uppercase">
                   Featured Project
                 </span>
-                <span className="text-xs font-medium text-forest/60">
-                  Curated by Treetino DePIN Council
+                <span className="font-mono text-xs text-zinc-500">
+                  Curated DePIN Allocation
                 </span>
               </div>
 
               <article
                 onClick={() => handleSelect(featuredDemo.siteId)}
-                className="group relative cursor-pointer overflow-hidden rounded-3xl border border-forest/15 bg-white shadow-sm transition-all duration-300 hover:border-forest/40 hover:shadow-xl"
+                className="group relative cursor-pointer overflow-hidden rounded-2xl border border-black/10 bg-white shadow-sm transition-all duration-300 hover:border-black/30 hover:shadow-xl"
               >
                 {/* 16:9 Photographic Cover Image */}
-                <div className="relative aspect-16/10 w-full overflow-hidden bg-forest/10 sm:aspect-16/9">
+                <div className="relative aspect-16/10 w-full overflow-hidden bg-zinc-100 sm:aspect-16/9">
                   <img
                     src={getCampaignCoverImage(featuredDemo.key)}
                     alt={featuredDemo.title}
@@ -264,14 +491,14 @@ export function VictronDemos({
                   />
                   {/* Overlay Badges */}
                   <div className="absolute top-4 left-4 flex flex-wrap items-center gap-2">
-                    <span className="rounded-full bg-forest/80 px-3 py-1 font-mono text-[11px] font-bold text-white backdrop-blur-md">
+                    <span className="rounded-full bg-zinc-950/80 px-3 py-1 font-mono text-[11px] font-bold text-white backdrop-blur-md shadow-xs">
                       {featuredDemo.categoryBadge}
                     </span>
-                    <span className="flex items-center gap-1.5 rounded-full bg-emerald-600/90 px-3 py-1 font-mono text-[11px] font-bold text-white shadow-xs backdrop-blur-md">
-                      <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
+                    <span className="flex items-center gap-1.5 rounded-full bg-[#183d89]/90 px-3 py-1 font-mono text-[11px] font-bold text-white shadow-xs backdrop-blur-md">
+                      <span className="h-1.5 w-1.5 rounded-full bg-emerald-300 animate-pulse" />
                       {featuredDemo.key === 'treetino-v1'
-                        ? '⚡ 42.8 kW Cerbo GX Live'
-                        : `⚡ ${(featuredDemo.currentPower.solarYieldWatts / 1000).toFixed(1)} kW Live`}
+                        ? '42.8 kW Cerbo GX Live'
+                        : `${(featuredDemo.currentPower.solarYieldWatts / 1000).toFixed(1)} kW Live`}
                     </span>
                   </div>
 
@@ -280,27 +507,27 @@ export function VictronDemos({
                     type="button"
                     aria-label="Bookmark this project"
                     onClick={(e) => toggleBookmark(featuredDemo.key, e)}
-                    className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-forest shadow-md backdrop-blur-md transition hover:bg-white hover:scale-110 active:scale-95"
+                    className="absolute top-4 right-4 flex h-9 w-9 items-center justify-center rounded-full bg-white/90 text-zinc-900 shadow-md backdrop-blur-md transition hover:bg-white hover:scale-110 active:scale-95 cursor-pointer"
                   >
                     <HeartIcon
                       className={`h-5 w-5 ${
                         bookmarkedKeys.has(featuredDemo.key)
                           ? 'fill-rose-500 text-rose-500'
-                          : 'text-forest/70'
+                          : 'text-zinc-600'
                       }`}
                     />
                   </button>
 
-                  <div className="absolute bottom-3 left-4 text-xs font-semibold text-white drop-shadow-md">
-                    📍 {featuredDemo.location.city},{' '}
+                  <div className="absolute bottom-3 left-4 font-mono text-xs font-medium text-white drop-shadow-md">
+                    {featuredDemo.location.city},{' '}
                     {featuredDemo.location.country}
                   </div>
                 </div>
 
-                {/* Kickstarter Green Progress Bar */}
-                <div className="h-2 w-full bg-forest/10">
+                {/* Minimalist Progress Line */}
+                <div className="h-1.5 w-full bg-zinc-100">
                   <div
-                    className="h-full bg-emerald-500 transition-all duration-500"
+                    className="h-full bg-gradient-to-r from-[#183d89] to-[#2762ad] transition-all duration-500"
                     style={{
                       width: `${Math.min(featuredDemo.financials.fundedPercent, 100)}%`,
                     }}
@@ -308,64 +535,164 @@ export function VictronDemos({
                 </div>
 
                 {/* Content Details */}
-                <div className="p-6 sm:p-8 space-y-4">
+                <div className="p-6 sm:p-8 space-y-6">
                   <div className="space-y-1.5">
-                    <h2 className="text-2xl font-bold tracking-tight text-forest group-hover:text-emerald-800 transition-colors sm:text-3xl">
+                    <h2 className="text-2xl font-medium tracking-tight text-zinc-950 group-hover:text-[#183d89] transition-colors sm:text-3xl">
                       {featuredDemo.title}
                     </h2>
-                    <p className="text-xs text-forest/60 font-medium">
-                      By{' '}
-                      <strong>
+                    <p className="font-mono text-xs text-zinc-500">
+                      Operator:{' '}
+                      <strong className="text-zinc-900">
                         {CAMPAIGN_METADATA[featuredDemo.key]?.creator ??
                           'MKovo Engineering'}
                       </strong>{' '}
-                      · 12 backed clean energy deployments
+                      · 12 verified installations
                     </p>
                   </div>
 
-                  <p className="text-sm leading-relaxed text-forest/80 line-clamp-3">
+                  <p className="text-sm leading-relaxed text-zinc-600 font-light line-clamp-3">
                     {featuredDemo.narrative}
                   </p>
 
                   {/* Kickstarter Stats Row */}
-                  <div className="grid grid-cols-3 gap-4 border-y border-forest/10 py-4">
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 border-y border-black/10 py-6">
                     <div>
-                      <span className="block font-mono text-xl font-black text-forest sm:text-2xl">
+                      <span className="block font-mono text-2xl font-light text-zinc-950 sm:text-3xl">
                         ${featuredDemo.financials.fundedUsdc.toLocaleString()}
                       </span>
-                      <span className="block text-[11px] text-forest/60">
-                        pledged of $
+                      <span className="block font-mono text-[11px] text-zinc-500 mt-1 uppercase">
+                        of $
                         {featuredDemo.financials.targetUsdc.toLocaleString()}
                       </span>
                     </div>
 
                     <div>
-                      <span className="block font-mono text-xl font-black text-emerald-800 sm:text-2xl">
+                      <span className="block font-mono text-2xl font-light text-[#183d89] sm:text-3xl">
                         {featuredDemo.financials.projectedApy}%
                       </span>
-                      <span className="block text-[11px] text-forest/60">
-                        projected yield (APY)
+                      <span className="block font-mono text-[11px] text-zinc-500 mt-1 uppercase">
+                        Projected APY
                       </span>
                     </div>
 
                     <div>
-                      <span className="block font-mono text-xl font-black text-forest sm:text-2xl">
-                        {CAMPAIGN_METADATA[featuredDemo.key]?.daysLeft ?? 14}
+                      <span className="block font-mono text-2xl font-light text-zinc-950 sm:text-3xl">
+                        $
+                        {(
+                          featuredDemo.financials.estAnnualRevenueUsdc / 1000
+                        ).toFixed(1)}
+                        k
                       </span>
-                      <span className="block text-[11px] text-forest/60">
-                        days to go
+                      <span className="block font-mono text-[11px] text-zinc-500 mt-1 uppercase">
+                        Est. PPA / Yr
                       </span>
+                    </div>
+
+                    <div>
+                      <span className="block font-mono text-2xl font-light text-zinc-950 sm:text-3xl">
+                        {CAMPAIGN_METADATA[featuredDemo.key]?.daysLeft ?? 18}
+                      </span>
+                      <span className="block font-mono text-[11px] text-zinc-500 mt-1 uppercase">
+                        Days to go
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Live SCADA Telemetry Glance Strip */}
+                  <div className="grid grid-cols-3 gap-3 rounded-xl border border-black/5 bg-zinc-50/80 p-3.5 text-xs">
+                    <div>
+                      <span className="block font-mono text-[10px] text-zinc-400 uppercase">
+                        Solar Output
+                      </span>
+                      <div className="mt-1 flex items-center gap-1.5 font-mono font-medium text-zinc-900">
+                        <SunIcon className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                        <span>
+                          {featuredDemo.currentPower.solarYieldWatts >= 1000
+                            ? `${(featuredDemo.currentPower.solarYieldWatts / 1000).toFixed(1)} kW`
+                            : `${featuredDemo.currentPower.solarYieldWatts.toFixed(0)} W`}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block font-mono text-[10px] text-zinc-400 uppercase">
+                        {featuredDemo.key === 'treetino-v1'
+                          ? 'Wind Turbines'
+                          : 'Battery SoC'}
+                      </span>
+                      <div className="mt-1 flex items-center gap-1.5 font-mono font-medium text-zinc-900">
+                        {featuredDemo.key === 'treetino-v1' ? (
+                          <>
+                            <WindIcon className="h-3.5 w-3.5 text-[#183d89] shrink-0" />
+                            <span>
+                              {(
+                                (featuredDemo.windYieldWatts ?? 0) / 1000
+                              ).toFixed(1)}{' '}
+                              kW
+                            </span>
+                          </>
+                        ) : (
+                          <>
+                            <BatteryIcon className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+                            <span>
+                              {featuredDemo.currentPower.batterySocPercent.toFixed(
+                                0,
+                              )}
+                              %
+                            </span>
+                          </>
+                        )}
+                      </div>
+                    </div>
+
+                    <div>
+                      <span className="block font-mono text-[10px] text-zinc-400 uppercase">
+                        Live Load
+                      </span>
+                      <div className="mt-1 flex items-center gap-1.5 font-mono font-medium text-zinc-900">
+                        <PowerPlugIcon className="h-3.5 w-3.5 text-zinc-600 shrink-0" />
+                        <span>
+                          {featuredDemo.currentPower.consumptionWatts >= 1000
+                            ? `${(featuredDemo.currentPower.consumptionWatts / 1000).toFixed(1)} kW`
+                            : `${featuredDemo.currentPower.consumptionWatts.toFixed(0)} W`}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Deliverables Checklist Callout Box */}
+                  <div className="rounded-xl border border-black/10 bg-zinc-50/70 p-4 space-y-2.5">
+                    <span className="font-mono text-[11px] font-bold uppercase tracking-wider text-zinc-800 block">
+                      Included with Your Backing:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-600">
+                      <div className="flex items-center gap-2">
+                        <CheckIcon className="h-4 w-4 text-[#183d89] shrink-0" />
+                        <span>SPL Hardware Share Certificate</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckIcon className="h-4 w-4 text-[#183d89] shrink-0" />
+                        <span>15-Year MKovo Industrial PPA</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckIcon className="h-4 w-4 text-[#183d89] shrink-0" />
+                        <span>Daily 1:1 Stablecoin Invoicing</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <CheckIcon className="h-4 w-4 text-[#183d89] shrink-0" />
+                        <span>Live Victron SCADA Audit</span>
+                      </div>
                     </div>
                   </div>
 
                   {/* User Active Backing Pill */}
                   {investments[featuredDemo.siteId]?.amountUsdc ? (
-                    <div className="flex items-center justify-between rounded-xl bg-emerald-50 px-4 py-2.5 text-xs text-emerald-950 border border-emerald-600/30">
-                      <span className="flex items-center gap-1.5 font-bold">
-                        <CheckIcon className="h-4 w-4 text-emerald-700" />
-                        You backed this project
+                    <div className="flex items-center justify-between rounded-xl bg-[#183d89]/5 px-4 py-3 text-xs text-zinc-900 border border-[#183d89]/20">
+                      <span className="flex items-center gap-1.5 font-bold text-[#183d89]">
+                        <CheckIcon className="h-4 w-4 text-[#183d89]" />
+                        You backed this hardware
                       </span>
-                      <span className="font-mono font-bold text-emerald-800">
+                      <span className="font-mono font-bold text-[#183d89]">
                         $
                         {investments[
                           featuredDemo.siteId
@@ -375,111 +702,174 @@ export function VictronDemos({
                     </div>
                   ) : null}
 
-                  {/* Primary CTA */}
-                  <div className="pt-2">
+                  {/* Action Buttons Row */}
+                  <div className="pt-2 flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (onBackProject) {
+                          onBackProject(featuredDemo);
+                        } else {
+                          handleSelect(featuredDemo.siteId);
+                        }
+                      }}
+                      className="flex flex-1 items-center justify-center gap-2 rounded-full bg-[#183d89] hover:bg-[#2762ad] px-8 py-4 text-sm font-semibold text-white shadow-md transition-all active:scale-[0.99] cursor-pointer"
+                    >
+                      <span>Back This Hardware Pool</span>
+                      <ArrowRightIcon className="h-4 w-4" />
+                    </button>
                     <button
                       type="button"
                       onClick={(e) => {
                         e.stopPropagation();
                         handleSelect(featuredDemo.siteId);
                       }}
-                      className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#05ce78] hover:bg-[#04b669] px-6 py-3.5 text-sm font-bold text-forest shadow-xs transition active:scale-[0.99]"
+                      className="flex items-center justify-center gap-2 rounded-full border border-black/15 bg-white hover:bg-black/5 px-6 py-4 text-xs font-mono font-medium text-zinc-800 transition-all cursor-pointer"
                     >
-                      <span>Back this project with mockUSDC</span>
-                      <ArrowRightIcon className="h-4 w-4" />
+                      <span>Inspect Live SCADA & Contract</span>
+                      <ExternalLinkIcon className="h-3.5 w-3.5 text-zinc-500" />
                     </button>
                   </div>
                 </div>
               </article>
             </div>
 
-            {/* RIGHT COLUMN (40%): RECOMMENDED FOR YOU STACK */}
-            <div className="lg:col-span-5 space-y-3">
+            {/* RIGHT COLUMN (40%): RECOMMENDED ACTIVE PIPELINE STACK */}
+            <div className="lg:col-span-5 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="font-mono text-xs font-bold uppercase tracking-wider text-forest/70">
-                  Recommended For You
+                <span className="text-xs font-semibold tracking-[0.2em] text-[#183d89] uppercase">
+                  Active Hardware Pipeline
                 </span>
-                <span className="text-xs font-medium text-leaf">
-                  Verified hardware
+                <span className="font-mono text-xs text-zinc-500">
+                  Select to Spotlight
                 </span>
               </div>
 
               <div className="space-y-4">
-                {recommendedDemos.slice(0, 3).map((item) => {
+                {recommendedDemos.map((item) => {
                   const meta = CAMPAIGN_METADATA[item.key] ?? {
                     creator: 'Verified Operator',
                     daysLeft: 14,
                     backers: 30,
                   };
                   const isSaved = bookmarkedKeys.has(item.key);
+                  const isSpotlight = spotlightKey === item.key;
+                  const holding = investments[item.siteId]?.amountUsdc;
 
                   return (
                     <article
                       key={item.siteId}
                       onClick={() => handleSelect(item.siteId)}
-                      className="group relative flex flex-col sm:flex-row gap-4 overflow-hidden rounded-2xl border border-forest/15 bg-white p-4 shadow-2xs transition-all duration-200 hover:border-forest/40 hover:shadow-md cursor-pointer"
+                      className={`group relative flex flex-col gap-4 overflow-hidden rounded-2xl border bg-white p-5 shadow-2xs transition-all duration-200 hover:shadow-lg cursor-pointer ${
+                        isSpotlight
+                          ? 'border-[#183d89] ring-2 ring-[#183d89]/15'
+                          : 'border-black/10 hover:border-black/30'
+                      }`}
                     >
-                      {/* Thumbnail (16:9 or square on desktop) */}
-                      <div className="relative aspect-16/10 sm:w-44 shrink-0 overflow-hidden rounded-xl bg-forest/10 sm:aspect-4/3">
-                        <img
-                          src={getCampaignCoverImage(item.key)}
-                          alt={item.title}
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-                        />
-                        <span className="absolute top-2 left-2 rounded-md bg-forest/80 px-2 py-0.5 font-mono text-[9px] font-bold text-white backdrop-blur-xs">
-                          {item.financials.projectedApy}% APY
-                        </span>
+                      {/* Top Row: Thumbnail + Core Metadata */}
+                      <div className="flex flex-col sm:flex-row gap-4">
+                        {/* Thumbnail with Single Clean APY Badge */}
+                        <div className="relative aspect-16/10 sm:w-44 shrink-0 overflow-hidden rounded-xl bg-zinc-100 sm:aspect-4/3">
+                          <img
+                            src={getCampaignCoverImage(item.key)}
+                            alt={item.title}
+                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                          />
+                          <span className="absolute top-2 left-2 rounded-md bg-zinc-950/85 px-2 py-0.5 font-mono text-[10px] font-semibold text-emerald-400 backdrop-blur-xs">
+                            {item.financials.projectedApy}% APY
+                          </span>
+                        </div>
+
+                        {/* Title & Core Metadata */}
+                        <div className="flex flex-1 flex-col justify-between min-w-0">
+                          <div>
+                            <div className="flex items-center justify-between text-[11px] text-zinc-500">
+                              <span className="font-mono text-xs font-medium uppercase tracking-wider text-[#183d89]">
+                                {item.categoryBadge}
+                              </span>
+                              <button
+                                type="button"
+                                aria-label="Bookmark project"
+                                onClick={(e) => toggleBookmark(item.key, e)}
+                                className="text-zinc-400 hover:text-rose-500 transition cursor-pointer"
+                              >
+                                <BookmarkIcon
+                                  className={`h-4 w-4 ${
+                                    isSaved
+                                      ? 'fill-rose-500 text-rose-500'
+                                      : 'text-zinc-400'
+                                  }`}
+                                />
+                              </button>
+                            </div>
+
+                            <h3 className="mt-1 text-base font-medium text-zinc-950 group-hover:text-[#183d89] transition line-clamp-2">
+                              {item.title}
+                            </h3>
+
+                            <p className="mt-0.5 font-mono text-[11px] text-zinc-500">
+                              {meta.creator} · {item.location.city}
+                            </p>
+                          </div>
+
+                          <div className="mt-2 text-[11px] font-mono text-zinc-500">
+                            {item.key === 'treetino-v1'
+                              ? '42.8 kW Clean Generation · MKovo PPA'
+                              : `${item.currentPower.batterySocPercent > 0 ? `${item.currentPower.batterySocPercent.toFixed(0)}% Storage · ` : ''}15-Yr Off-Take Agreement`}
+                          </div>
+                        </div>
                       </div>
 
-                      {/* Content Column */}
-                      <div className="flex flex-1 flex-col justify-between">
-                        <div>
-                          <div className="flex items-center justify-between text-[11px] text-forest/60">
-                            <span className="font-mono font-bold uppercase tracking-wider">
-                              {item.categoryBadge}
-                            </span>
-                            <button
-                              type="button"
-                              aria-label="Bookmark project"
-                              onClick={(e) => toggleBookmark(item.key, e)}
-                              className="text-forest/50 hover:text-rose-500 transition"
-                            >
-                              <BookmarkIcon
-                                className={`h-4 w-4 ${
-                                  isSaved
-                                    ? 'fill-rose-500 text-rose-500'
-                                    : 'text-forest/40'
-                                }`}
-                              />
-                            </button>
-                          </div>
-
-                          <h3 className="mt-1 text-sm font-bold text-forest group-hover:text-emerald-800 transition line-clamp-2">
-                            {item.title}
-                          </h3>
-
-                          <p className="mt-0.5 text-[11px] text-forest/60">
-                            By {meta.creator} · {item.location.city}
-                          </p>
+                      {/* Progress Bar & Financial Breakdown */}
+                      <div className="space-y-1.5">
+                        <div className="h-1.5 w-full bg-zinc-100 rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-[#183d89] to-[#2762ad] rounded-full"
+                            style={{
+                              width: `${Math.min(item.financials.fundedPercent, 100)}%`,
+                            }}
+                          />
                         </div>
-
-                        {/* Progress Bar & Mini Stats */}
-                        <div className="mt-3">
-                          <div className="h-1.5 w-full bg-forest/10 rounded-full overflow-hidden">
-                            <div
-                              className="h-full bg-emerald-500 rounded-full"
-                              style={{
-                                width: `${Math.min(item.financials.fundedPercent, 100)}%`,
-                              }}
-                            />
-                          </div>
-                          <div className="mt-1 flex items-center justify-between text-[11px] font-mono text-forest/70">
-                            <span className="font-bold text-emerald-800">
-                              {item.financials.fundedPercent}% funded
+                        <div className="flex items-center justify-between text-[11px] font-mono text-zinc-600">
+                          <div>
+                            <span className="font-semibold text-zinc-950">
+                              ${item.financials.fundedUsdc.toLocaleString()}
                             </span>
-                            <span>{meta.daysLeft} days left</span>
+                            <span className="text-zinc-500 ml-1">
+                              ({item.financials.fundedPercent}%)
+                            </span>
                           </div>
+                          <span>{meta.daysLeft} days left</span>
                         </div>
+                      </div>
+
+                      {/* Active User Backing Indicator */}
+                      {holding && holding > 0 && (
+                        <div className="flex items-center justify-between rounded-lg bg-emerald-50/70 border border-emerald-200/50 px-3 py-1.5 text-xs text-emerald-800">
+                          <span className="flex items-center gap-1 text-[11px] font-medium font-mono">
+                            <CheckIcon className="h-3.5 w-3.5 text-emerald-600" />
+                            Backed pool position
+                          </span>
+                          <span className="font-mono text-[11px] font-bold">
+                            ${holding.toLocaleString()} mockUSDC
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Single Primary Action Button */}
+                      <div className="pt-0.5">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onBackProject?.(item);
+                          }}
+                          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-zinc-950 hover:bg-[#183d89] py-2.5 px-4 text-xs font-semibold text-white shadow-2xs transition-all active:scale-[0.99] cursor-pointer"
+                        >
+                          <span>Back This Pool</span>
+                          <ArrowRightIcon className="h-3.5 w-3.5" />
+                        </button>
                       </div>
                     </article>
                   );
@@ -487,13 +877,14 @@ export function VictronDemos({
               </div>
 
               {/* Discovery Box */}
-              <div className="rounded-2xl border border-dashed border-forest/20 bg-cream/30 p-5 text-xs text-forest/80">
-                <span className="font-bold block text-forest text-sm">
-                  Looking to back custom capacity?
+              <div className="rounded-2xl border border-black/10 bg-zinc-50 p-6 text-xs text-zinc-600 space-y-2">
+                <span className="font-medium block text-zinc-950 text-sm">
+                  Continuous Telemetry Attestation
                 </span>
-                <p className="mt-1 text-xs text-forest/70">
-                  Every project is backed by verified Cerbo GX hardware and a
-                  signed long-term corporate PPA off-taker agreement.
+                <p className="text-xs text-zinc-500 leading-relaxed font-light">
+                  Every pool is connected to on-site Victron Cerbo GX hardware
+                  relaying live kilowatt-hours, battery charge cycles, and
+                  institutional PPA cashflow directly to the Solana blockchain.
                 </p>
               </div>
             </div>
@@ -501,301 +892,67 @@ export function VictronDemos({
         </div>
       )}
 
-      {/* 5. "TAKING OFF: CLEAN ENERGY PROJECTS TRENDING RIGHT NOW" GRID */}
-      <div className="space-y-6 pt-6 border-t border-forest/15">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="mb-1 flex items-center gap-2">
-              <span className="h-2 w-2 rounded-full bg-emerald-600 animate-pulse" />
-              <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-800">
-                Taking Off
-              </span>
-            </div>
-            <h2 className="text-2xl font-extrabold tracking-tight text-forest sm:text-3xl">
-              Clean Energy Projects Trending Right Now
-            </h2>
-            <p className="mt-1 text-xs text-forest/70 sm:text-sm">
-              Community solar microgrids, battery arbitrage, and fleet
-              electrification streaming metered investor yields on Solana.
-            </p>
-          </div>
-
-          <span className="font-mono text-xs text-forest/60">
-            Showing {filteredDemos.length} verified installations
-          </span>
-        </div>
-
-        {/* 4-COLUMN KICKSTARTER CARD GRID */}
-        <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
-          {filteredDemos.map((demo) => (
-            <CleanKickstarterCard
-              key={demo.siteId}
-              demo={demo}
-              holdingAmount={investments[demo.siteId]?.amountUsdc}
-              isBookmarked={bookmarkedKeys.has(demo.key)}
-              onToggleBookmark={(e) => toggleBookmark(demo.key, e)}
-              onSelect={() => handleSelect(demo.siteId)}
-            />
-          ))}
-        </div>
-      </div>
-
-      {/* 6. PLATFORM DEPIN HARDWARE IMPACT STATS STRIP */}
+      {/* 7. PLATFORM DEPIN HARDWARE IMPACT STATS STRIP */}
       {demos.length > 0 && (
-        <div className="rounded-3xl border border-forest/15 bg-white p-6 shadow-xs sm:p-8">
-          <div className="mb-4 flex items-center justify-between border-b border-forest/10 pb-4">
+        <div className="rounded-2xl border border-black/10 bg-white p-8 shadow-xs sm:p-10">
+          <div className="mb-6 flex items-center justify-between border-b border-black/10 pb-6">
             <div>
-              <span className="font-mono text-xs font-bold uppercase tracking-wider text-emerald-800">
-                Network Telemetry
+              <span className="text-xs font-semibold tracking-[0.2em] text-[#183d89] uppercase">
+                SCADA TELEMETRY NETWORK
               </span>
-              <h3 className="text-lg font-bold text-forest">
-                Making Clean Energy DePIN a Reality
+              <h3 className="mt-1 text-xl font-medium text-zinc-950 sm:text-2xl">
+                On-Chain Physical Infrastructure
               </h3>
             </div>
-            <span className="rounded-full bg-emerald-50 px-3 py-1 font-mono text-xs font-bold text-emerald-800">
-              Live Venus OS SCADA
+            <span className="rounded-full bg-black/5 px-4 py-1.5 font-mono text-xs font-medium text-zinc-800">
+              Venus OS Telemetry
             </span>
           </div>
 
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-8 sm:grid-cols-4">
             <div>
-              <span className="block font-mono text-[11px] font-bold text-forest/60 uppercase">
-                Total Capital Goal
+              <span className="block font-mono text-xs text-zinc-400 uppercase tracking-wider">
+                Total Goal
               </span>
-              <span className="mt-0.5 block font-mono text-xl font-black text-forest sm:text-2xl">
-                ${totalTargetUsdc.toLocaleString()} USDC
+              <span className="mt-2 block font-mono text-2xl sm:text-3xl font-light text-zinc-950">
+                ${totalTargetUsdc.toLocaleString()}
               </span>
             </div>
             <div>
-              <span className="block font-mono text-[11px] font-bold text-forest/60 uppercase">
+              <span className="block font-mono text-xs text-zinc-400 uppercase tracking-wider">
                 Capital Backed
               </span>
-              <span className="mt-0.5 block font-mono text-xl font-black text-emerald-800 sm:text-2xl">
-                ${totalFundedUsdc.toLocaleString()} USDC
+              <span className="mt-2 block font-mono text-2xl sm:text-3xl font-light text-[#183d89]">
+                ${totalFundedUsdc.toLocaleString()}
               </span>
             </div>
             <div>
-              <span className="block font-mono text-[11px] font-bold text-forest/60 uppercase">
-                Real-Time Generation
+              <span className="block font-mono text-xs text-zinc-400 uppercase tracking-wider">
+                Live Output
               </span>
-              <span className="mt-0.5 block font-mono text-xl font-black text-sky-900 sm:text-2xl">
+              <span className="mt-2 block font-mono text-2xl sm:text-3xl font-light text-zinc-950">
                 {(totalSolarYieldWatts / 1000).toFixed(1)} kW
               </span>
             </div>
             <div>
-              <span className="block font-mono text-[11px] font-bold text-forest/60 uppercase">
-                Active Gateways
+              <span className="block font-mono text-xs text-zinc-400 uppercase tracking-wider">
+                Active Nodes
               </span>
-              <span className="mt-0.5 flex items-center gap-1.5 font-mono text-xl font-black text-forest sm:text-2xl">
-                <span className="h-2.5 w-2.5 rounded-full bg-emerald-600 animate-pulse" />
-                {demos.length} Industrial Sites
+              <span className="mt-2 flex items-center gap-2 font-mono text-2xl sm:text-3xl font-light text-zinc-950">
+                <span className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                {demos.length} Industrial
               </span>
             </div>
           </div>
 
-          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-forest/10 pt-3 text-[11px] font-mono text-forest/60">
-            <span>
-              Hardware Channel: <strong>Cerbo GX & Venus OS</strong> via Victron
-              VRM REST API
-            </span>
+          <div className="mt-8 flex flex-wrap items-center justify-between gap-3 border-t border-black/10 pt-6 font-mono text-xs text-zinc-500">
+            <span>Telemetry Source: Victron Cerbo GX via VRM REST API</span>
             <span>
               Last hardware sync: {new Date(updatedAt).toLocaleTimeString()}
             </span>
           </div>
         </div>
       )}
-    </section>
-  );
-}
-
-function CleanKickstarterCard({
-  demo,
-  holdingAmount,
-  isBookmarked,
-  onToggleBookmark,
-  onSelect,
-}: {
-  demo: VictronDemoItem;
-  holdingAmount?: number;
-  isBookmarked?: boolean;
-  onToggleBookmark: (e: React.MouseEvent) => void;
-  onSelect: () => void;
-}) {
-  const { currentPower, financials, location } = demo;
-  const meta = CAMPAIGN_METADATA[demo.key] ?? {
-    creator: 'Verified Operator',
-    daysLeft: 14,
-    backers: 35,
-  };
-
-  return (
-    <article
-      onClick={onSelect}
-      className="group relative flex flex-col justify-between overflow-hidden rounded-2xl border border-forest/15 bg-white shadow-2xs transition-all duration-200 hover:border-forest/40 hover:shadow-lg cursor-pointer"
-    >
-      <div>
-        {/* Cover Image (16:9 ratio) */}
-        <div className="relative aspect-16/10 w-full overflow-hidden bg-forest/10">
-          <img
-            src={getCampaignCoverImage(demo.key)}
-            alt={demo.title}
-            className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
-          />
-
-          {/* Top Overlaid Badges */}
-          <div className="absolute top-2.5 left-2.5 flex items-center gap-1.5">
-            <span className="rounded-full bg-forest/80 px-2.5 py-0.5 font-mono text-[10px] font-bold text-white backdrop-blur-xs">
-              {demo.categoryBadge}
-            </span>
-          </div>
-
-          {/* Save / Bookmark Button */}
-          <button
-            type="button"
-            aria-label="Bookmark project"
-            onClick={onToggleBookmark}
-            className="absolute top-2.5 right-2.5 flex h-7 w-7 items-center justify-center rounded-full bg-white/90 text-forest shadow-xs backdrop-blur-xs transition hover:bg-white hover:scale-110 active:scale-95"
-          >
-            <BookmarkIcon
-              className={`h-4 w-4 ${
-                isBookmarked ? 'fill-rose-500 text-rose-500' : 'text-forest/50'
-              }`}
-            />
-          </button>
-
-          {/* Bottom Live Hardware Overlay */}
-          <div className="absolute bottom-2 left-2.5 flex items-center gap-1.5 rounded-full bg-emerald-600/90 px-2.5 py-0.5 font-mono text-[10px] font-bold text-white shadow-xs backdrop-blur-xs">
-            <span className="h-1.5 w-1.5 rounded-full bg-white animate-pulse" />
-            {demo.key === 'treetino-v1'
-              ? '⚡ 42.8 kW Cerbo GX'
-              : `⚡ ${(currentPower.solarYieldWatts / 1000).toFixed(1)} kW Live`}
-          </div>
-        </div>
-
-        {/* Kickstarter Green Progress Bar */}
-        <div className="h-1.5 w-full bg-forest/10">
-          <div
-            className="h-full bg-emerald-500 transition-all duration-500"
-            style={{ width: `${Math.min(financials.fundedPercent, 100)}%` }}
-          />
-        </div>
-
-        {/* Body Padding */}
-        <div className="p-5 space-y-3">
-          <div>
-            <h3 className="text-base font-bold tracking-tight text-forest group-hover:text-emerald-800 transition line-clamp-1">
-              {demo.title}
-            </h3>
-            <p className="mt-0.5 text-xs text-forest/60">
-              By {meta.creator} · {location?.city ?? 'Site'},{' '}
-              {location?.country ?? ''}
-            </p>
-          </div>
-
-          <p className="text-xs text-forest/75 line-clamp-2 leading-relaxed">
-            {demo.narrative}
-          </p>
-
-          {/* Key Metrics Strip */}
-          <div className="grid grid-cols-2 gap-2 rounded-xl bg-forest/5 p-3">
-            <div>
-              <span className="block text-[10px] font-semibold text-forest/60">
-                Projected APY
-              </span>
-              <span className="font-mono font-extrabold text-base text-emerald-800">
-                {financials.projectedApy}%
-              </span>
-            </div>
-            <div>
-              <span className="block text-[10px] font-semibold text-forest/60">
-                Annual Revenue
-              </span>
-              <span className="font-mono font-bold text-xs text-forest">
-                ${financials.estAnnualRevenueUsdc.toLocaleString()} / yr
-              </span>
-            </div>
-          </div>
-
-          {/* Live Telemetry Flow Glance */}
-          <div className="grid grid-cols-3 gap-1 rounded-lg border border-forest/10 bg-cream/30 p-2 text-[11px]">
-            <div className="flex items-center gap-1">
-              <SunIcon className="h-3 w-3 text-amber-600 shrink-0" />
-              <span className="font-mono font-bold text-forest truncate">
-                {currentPower.solarYieldWatts >= 1000
-                  ? `${(currentPower.solarYieldWatts / 1000).toFixed(1)}k`
-                  : `${currentPower.solarYieldWatts.toFixed(0)}W`}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              {demo.key === 'treetino-v1' ? (
-                <WindIcon className="h-3 w-3 text-sky-700 shrink-0" />
-              ) : (
-                <BatteryIcon className="h-3 w-3 text-emerald-700 shrink-0" />
-              )}
-              <span className="font-mono font-bold text-forest truncate">
-                {demo.key === 'treetino-v1'
-                  ? `${((demo.windYieldWatts ?? 0) / 1000).toFixed(1)}k`
-                  : `${currentPower.batterySocPercent.toFixed(0)}%`}
-              </span>
-            </div>
-
-            <div className="flex items-center gap-1">
-              <PowerPlugIcon className="h-3 w-3 text-emerald-800 shrink-0" />
-              <span className="font-mono font-bold text-forest truncate">
-                {currentPower.consumptionWatts >= 1000
-                  ? `${(currentPower.consumptionWatts / 1000).toFixed(1)}k`
-                  : `${currentPower.consumptionWatts.toFixed(0)}W`}
-              </span>
-            </div>
-          </div>
-
-          {/* Kickstarter Pledged & Days Left */}
-          <div>
-            <div className="flex items-baseline justify-between">
-              <div>
-                <span className="font-mono font-black text-sm text-forest">
-                  ${financials.fundedUsdc.toLocaleString()}
-                </span>
-                <span className="ml-1 text-[11px] text-forest/60">
-                  pledged ({financials.fundedPercent}%)
-                </span>
-              </div>
-              <span className="font-mono text-xs font-semibold text-forest/70">
-                {meta.daysLeft}d left
-              </span>
-            </div>
-          </div>
-
-          {/* User Active Investment Badge if invested */}
-          {holdingAmount && holdingAmount > 0 && (
-            <div className="flex items-center justify-between rounded-lg border border-emerald-600/30 bg-emerald-50 px-2.5 py-1.5 text-xs text-emerald-950">
-              <span className="flex items-center gap-1 font-bold text-[11px]">
-                <CheckIcon className="h-3 w-3 text-emerald-700" />
-                Your Backing:
-              </span>
-              <span className="font-mono font-bold text-[11px] text-emerald-800">
-                ${holdingAmount.toLocaleString()} mockUSDC
-              </span>
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Bottom Button */}
-      <div className="px-5 pb-5 pt-1">
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onSelect();
-          }}
-          className="flex w-full items-center justify-center gap-1.5 rounded-xl bg-forest px-4 py-2.5 text-xs font-bold text-white shadow-2xs transition hover:bg-[#23573e] active:scale-[0.99]"
-        >
-          <span>Inspect Hardware & Back</span>
-          <ArrowRightIcon className="h-3.5 w-3.5" />
-        </button>
-      </div>
-    </article>
+    </div>
   );
 }

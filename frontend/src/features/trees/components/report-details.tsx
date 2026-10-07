@@ -20,9 +20,7 @@ export function ReportDetails({ report }: { report: IndexedReport }) {
           remaining
         </p>
       ) : (
-        <p className="text-forest/70">
-          Invoice draft · Awaiting admin issuance
-        </p>
+        <p className="text-zinc-500">Invoice draft · Awaiting admin issuance</p>
       )}
       {pricing ? (
         <>
@@ -37,7 +35,7 @@ export function ReportDetails({ report }: { report: IndexedReport }) {
               ? 'This spot-price amount cannot be issued as an unsigned on-chain invoice.'
               : `${formatTokenAmount(pricing.amount)} mockUSDC at ${pricing.usdCzk} CZK/USD`}
           </p>
-          <p className="text-xs text-forest/65">
+          <p className="text-xs text-zinc-500">
             UTC report day {pricing.date} · CNB fixing{' '}
             {pricing.exchangeRateDate} · Energy price only
           </p>
@@ -76,7 +74,7 @@ export function ReportDetails({ report }: { report: IndexedReport }) {
               </div>
             </details>
           )}
-          <div className="flex flex-wrap gap-3 text-xs underline">
+          <div className="flex flex-wrap gap-3 text-xs underline text-t-blue">
             {(
               pricing.priceSources ?? [
                 { date: pricing.date, url: pricing.priceSource },
@@ -87,6 +85,7 @@ export function ReportDetails({ report }: { report: IndexedReport }) {
                 href={source.url}
                 target="_blank"
                 rel="noreferrer"
+                className="hover:text-t-accent"
               >
                 OTE {source.date} ↗
               </a>
@@ -95,19 +94,20 @@ export function ReportDetails({ report }: { report: IndexedReport }) {
               href={pricing.exchangeRateSource}
               target="_blank"
               rel="noreferrer"
+              className="hover:text-t-accent"
             >
               CNB rates ↗
             </a>
           </div>
         </>
       ) : (
-        <p className="text-xs text-forest/65">
+        <p className="text-xs text-zinc-500">
           {report.pricingError
             ? `Pricing pending: ${report.pricingError}. The backend will retry.`
             : 'Fetching 15-minute OTE prices and CNB exchange rates…'}
         </p>
       )}
-      <details className="text-xs text-forest/65">
+      <details className="text-xs text-zinc-500">
         <summary className="cursor-pointer">
           {report.wh.length} production readings
         </summary>

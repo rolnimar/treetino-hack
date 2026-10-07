@@ -37,7 +37,7 @@ export function ActivationForm({ tree }: { tree: IndexedTree }) {
           {...register('firstDay')}
           error={errors.firstDay?.message}
         />
-        <p className="text-xs text-forest/65">
+        <p className="text-xs text-zinc-500">
           Choose a past day to start automatic reporting from history, or a
           future day to schedule it.
         </p>

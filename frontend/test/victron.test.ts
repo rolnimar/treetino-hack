@@ -568,7 +568,7 @@ describe('Victron Green Energy DePIN archetypes and investor financials', () => 
       identifier: 'treenet-v1-001',
       vrmUrl: 'https://vrm.victronenergy.com/installation/100001/dashboard',
       location: {
-        city: 'Prague / Středočeský',
+        city: 'Prague / Central Bohemia',
         country: 'Czech Republic',
         latitude: 50.0755,
         longitude: 14.4378,

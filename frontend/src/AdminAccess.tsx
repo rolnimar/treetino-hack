@@ -14,17 +14,17 @@ export function AdminAccess() {
   return (
     <section
       aria-label="Admin access"
-      className="border-t border-forest/20 py-12"
+      className="border-t border-black/10 py-12"
     >
-      <p className="eyebrow">
+      <p className="eyebrow text-t-blue">
         {auth.session ? 'ADMIN ACCESS' : 'PUBLIC ACCESS'}
       </p>
-      <h2 className="mb-3 text-2xl font-bold">
+      <h2 className="mb-3 text-2xl font-black text-zinc-950">
         {auth.session ? 'Admin workspace' : 'Admin access'}
       </h2>
       {auth.session ? (
         <>
-          <p className="mb-6 text-sm break-all">
+          <p className="mb-6 text-sm text-zinc-600 break-all">
             Signed in as {auth.session.admin.wallet}
           </p>
           <Suspense fallback={<p>Loading admin tools…</p>}>
@@ -33,7 +33,7 @@ export function AdminAccess() {
         </>
       ) : (
         <>
-          <p className="mb-5 text-sm text-forest/75">
+          <p className="mb-5 text-sm text-zinc-600">
             {auth.isSigningIn
               ? 'Confirm the message in your wallet to verify admin access.'
               : connected

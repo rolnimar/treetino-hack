@@ -1,266 +1,139 @@
-@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,100..1000;1,9..40,100..1000&family=Plus+Jakarta+Sans:ital,wght@0,200..800;1,200..800&display=swap');
 @import 'tailwindcss';
-@theme {
-  --color-forest: #173d2c;
-  --color-leaf: #6f8d40;
-  --color-cream: #f5f3eb;
+
+@theme inline {
+  --font-sans:
+    'DM Sans', 'Plus Jakarta Sans', ui-sans-serif, system-ui, -apple-system,
+    BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+
+  --color-t-accent: rgb(39, 98, 173);
+  --color-t-blue: rgb(24, 61, 137);
+  --color-t-dark: rgb(33, 41, 85);
+  --color-t-purple: rgb(42, 41, 58);
+
+  /* Legacy aliases aligned with Treetino brand palette */
+  --color-forest: rgb(24, 61, 137);
+  --color-leaf: rgb(39, 98, 173);
+  --color-cream: #f4f6fb;
 }
+
 :root {
-  font-family: 'DM Sans', sans-serif;
-  color: #173d2c;
-  background: #f5f3eb;
+  font-family: var(--font-sans, 'DM Sans', sans-serif);
+  color: #09090b;
+  background-color: #fafafb;
   font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+
+  --t-blue: rgb(24, 61, 137);
+  --t-accent: rgb(39, 98, 173);
+  --t-dark: rgb(33, 41, 85);
+  --t-purple: rgb(42, 41, 58);
 }
+
 * {
   box-sizing: border-box;
 }
+
+html,
 body {
   margin: 0;
+  padding: 0;
+  background-color: #fafafb;
+  color: #09090b;
+  min-height: 100%;
 }
+
 a {
   color: inherit;
-}
-main {
-  max-width: 1260px;
-  margin: auto;
-  padding: 0 52px;
-}
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 36px 0;
-  border-bottom: 1px solid #dcded2;
-}
-.brand {
-  font-family: Manrope, sans-serif;
-  font-size: 32px;
-  letter-spacing: -2px;
-  font-weight: 800;
   text-decoration: none;
 }
-.brand span {
-  color: #6f8d40;
-  display: inline-block;
-  margin-left: 5px;
-}
-.network {
+
+/* Treetino Core App Container */
+.treetino-app-shell {
+  min-height: 100vh;
   display: flex;
-  align-items: center;
-  gap: 9px;
-  font-size: 13px;
+  flex-direction: column;
+  background-color: #fafafb;
 }
-.header-controls {
-  display: flex;
-  align-items: center;
-  gap: 20px;
+
+/* Framing guidelines for standard page containers */
+.treetino-content-container {
+  width: 100%;
+  max-width: 80rem; /* 1280px */
+  margin-left: auto;
+  margin-right: auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
-.header-controls .wallet-adapter-button {
-  background: #173d2c;
-  font-family: inherit;
-  font-size: 14px;
-  border-radius: 6px;
-}
-.header-controls .wallet-adapter-button:not([disabled]):hover {
-  background: #28573d;
-}
-.header-controls .wallet-adapter-button:focus-visible {
-  outline: 3px solid #8eaa5a;
-  outline-offset: 4px;
-}
-.dot {
-  width: 7px;
-  height: 7px;
-  background: #6f8d40;
-  border-radius: 50%;
-}
-.hero {
-  position: relative;
-  min-height: 525px;
-  padding: 76px 0 72px;
-  overflow: hidden;
-}
-.eyebrow {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 2px;
-  margin: 0 0 26px;
-}
-.hero h1 {
-  font-family: Manrope, sans-serif;
-  font-size: clamp(42px, 6vw, 76px);
-  font-weight: 600;
-  letter-spacing: -4px;
-  line-height: 1.08;
-  margin: 0;
-  position: relative;
-  z-index: 1;
-}
-.hero h1 em {
-  font-style: normal;
-  color: #6f8d40;
-}
-.intro {
-  position: relative;
-  z-index: 1;
-  max-width: 360px;
-  font-size: 17px;
-  line-height: 1.7;
-  color: #556358;
-  margin: 26px 0;
-}
-.button {
-  display: inline-flex;
-  align-items: center;
-  gap: 36px;
-  background: #173d2c;
-  color: #fff;
-  padding: 15px 21px;
-  border-radius: 4px;
-  text-decoration: none;
-  font-size: 14px;
-  position: relative;
-  z-index: 1;
-}
-.button:hover {
-  background: #28573d;
-}
-.button:focus-visible {
-  outline: 3px solid #8eaa5a;
-  outline-offset: 4px;
-}
-.tree {
-  position: absolute;
-  right: 35px;
-  top: 70px;
-  width: 330px;
-  height: 370px;
-}
-.canopy {
-  position: absolute;
-  width: 200px;
-  height: 190px;
-  border-radius: 55% 45% 42% 58%;
-  background: #b7ca8d;
-  z-index: 2;
-}
-.c1 {
-  left: 65px;
-  top: 0;
-}
-.c2 {
-  left: 0;
-  top: 96px;
-  background: #89a95e;
-  transform: rotate(-18deg);
-}
-.c3 {
-  right: 0;
-  top: 110px;
-  background: #658948;
-  transform: rotate(22deg);
-}
-.trunk {
-  position: absolute;
-  left: 156px;
-  top: 150px;
-  width: 19px;
-  height: 205px;
-  background: #173d2c;
-  border-radius: 8px;
-}
-.ground {
-  position: absolute;
-  bottom: 4px;
-  left: 18px;
-  width: 295px;
-  height: 20px;
-  border-radius: 50%;
-  background: #d7dfbe;
-}
-.steps {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  border-top: 1px solid #dcded2;
-  border-bottom: 1px solid #dcded2;
-}
-.steps article {
-  padding: 32px 28px 36px 0;
-}
-.steps article + article {
-  border-left: 1px solid #dcded2;
-  padding-left: 28px;
-}
-.steps span {
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 1.5px;
-  color: #6f8d40;
-}
-.steps h2 {
-  font-family: Manrope, sans-serif;
-  font-size: 20px;
-  letter-spacing: -0.7px;
-  margin: 18px 0 10px;
-}
-.steps p {
-  font-size: 14px;
-  line-height: 1.7;
-  color: #556358;
-  margin: 0;
-}
-footer {
-  display: flex;
-  justify-content: space-between;
-  padding: 22px 0 26px;
-  font-size: 12px;
-  color: #63715d;
-}
-@media (max-width: 850px) {
-  header {
-    flex-wrap: wrap;
-    gap: 20px;
-  }
-  .header-controls {
-    gap: 12px;
-    flex-wrap: wrap;
-  }
-  main {
-    padding: 0 25px;
-  }
-  .tree {
-    right: -65px;
-    opacity: 0.35;
-    transform: scale(0.8);
-    transform-origin: right top;
-  }
-  .hero {
-    min-height: 470px;
-  }
-  .hero h1 {
-    letter-spacing: -2px;
-  }
-  .steps {
-    grid-template-columns: 1fr;
-  }
-  .steps article + article {
-    border-left: 0;
-    border-top: 1px solid #dcded2;
-    padding-left: 0;
-  }
-  .steps article {
-    padding: 25px 0;
-  }
-  .intro {
-    max-width: 310px;
-  }
-}
-@media (prefers-reduced-motion: no-preference) {
-  html {
-    scroll-behavior: smooth;
+
+@media (min-width: 640px) {
+  .treetino-content-container {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
+@media (min-width: 1024px) {
+  .treetino-content-container {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+}
+
+/* Solana Wallet Adapter Override to match Treetino Primary Button */
+.wallet-adapter-button {
+  background-color: var(--t-blue) !important;
+  color: #ffffff !important;
+  font-family: inherit !important;
+  font-size: 0.8125rem !important;
+  font-weight: 600 !important;
+  border-radius: 0.75rem !important;
+  height: 2.25rem !important;
+  padding: 0 1rem !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1) !important;
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px -1px rgba(0, 0, 0, 0.1) !important;
+  cursor: pointer !important;
+}
+
+.wallet-adapter-button:not([disabled]):hover {
+  background-color: var(--t-accent) !important;
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 6px -1px rgba(24, 61, 137, 0.25) !important;
+}
+
+.wallet-adapter-button:active {
+  transform: translateY(0) !important;
+}
+
+.wallet-adapter-button-trigger {
+  background-color: var(--t-blue) !important;
+}
+
+.wallet-adapter-modal-wrapper {
+  font-family: inherit !important;
+  border-radius: 1.5rem !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+/* Treetino Badges & Pills */
+.eyebrow {
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--t-blue);
+  margin-bottom: 0.75rem;
+}
+
+/* Kickstarter Animated Flow Paths */
 @keyframes vrm-dash-flow {
   from {
     stroke-dashoffset: 24;
@@ -308,7 +181,7 @@ footer {
 }
 
 .vrm-conduit {
-  stroke: #dcded2;
+  stroke: #e2e8f0;
   stroke-width: 6;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -335,13 +208,13 @@ footer {
 }
 
 .vrm-flow-sky {
-  stroke: #0284c7;
+  stroke: #2762ad;
   stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 8 8;
   animation: vrm-dash-fast 1s linear infinite;
-  filter: drop-shadow(0 0 3px rgba(2, 132, 199, 0.4));
+  filter: drop-shadow(0 0 3px rgba(39, 98, 173, 0.5));
 }
 
 .vrm-flow-rose {
@@ -375,14 +248,14 @@ footer {
 }
 
 .vrm-conduit-outer {
-  stroke: #cbd5e1;
+  stroke: #e2e8f0;
   stroke-width: 8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .vrm-conduit-inner {
-  stroke: #f8fafc;
+  stroke: #ffffff;
   stroke-width: 4;
   stroke-linecap: round;
   stroke-linejoin: round;
@@ -409,11 +282,17 @@ footer {
 }
 
 .vrm-flow-reverse-sky {
-  stroke: #0284c7;
+  stroke: #2762ad;
   stroke-width: 3;
   stroke-linecap: round;
   stroke-linejoin: round;
   stroke-dasharray: 8 8;
   animation: vrm-dash-fast-reverse 1s linear infinite;
-  filter: drop-shadow(0 0 3px rgba(2, 132, 199, 0.4));
+  filter: drop-shadow(0 0 3px rgba(39, 98, 173, 0.5));
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }

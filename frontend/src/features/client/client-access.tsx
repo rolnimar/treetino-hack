@@ -21,16 +21,16 @@ function ClientAccessForWallet({ wallet }: { wallet: ConnectedWallet | null }) {
   return (
     <section
       aria-label="Client access"
-      className="border-t border-forest/20 py-12"
+      className="border-t border-black/10 py-12"
     >
-      <p className="eyebrow">CLIENT ACCESS</p>
-      <h2 className="mb-3 text-2xl font-bold">
+      <p className="eyebrow text-t-blue">CLIENT ACCESS</p>
+      <h2 className="mb-3 text-2xl font-black text-zinc-950">
         {session ? 'Client workspace' : 'Your trees & invoices'}
       </h2>
       <ErrorMessage error={error} />
       {session && wallet ? (
         <>
-          <p className="mb-4 text-sm break-all">
+          <p className="mb-4 text-sm text-zinc-600 break-all">
             Signed in as {session.client.wallet}
           </p>
           <Button variant="secondary" className="mb-5" onClick={logout}>
@@ -40,7 +40,7 @@ function ClientAccessForWallet({ wallet }: { wallet: ConnectedWallet | null }) {
         </>
       ) : (
         <>
-          <p className="mb-5 text-sm text-forest/75">
+          <p className="mb-5 text-sm text-zinc-600">
             Sign a message with your client wallet to see its trees and
             invoices.
           </p>
